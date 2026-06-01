@@ -1,0 +1,92 @@
+{"event":"auth","tool":"read_note","message":"concepts/neural-networks.md","level":"info","args":{"approvalLevel":1},"timestamp":"2026-05-31T13:56:27.903Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"read_note","args":{"path":"concepts/neural-networks.md"},"result":"success","durationMs":7,"timestamp":"2026-05-31T13:56:27.910Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"read_note","message":"concepts/transformers.md","level":"info","args":{"approvalLevel":1},"timestamp":"2026-05-31T13:56:27.965Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"read_note","args":{"path":"concepts/transformers.md","includeFrontmatter":true},"result":"success","durationMs":4,"timestamp":"2026-05-31T13:56:27.969Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"write_note","message":"raw/test-write.md","level":"info","args":{"approvalLevel":2},"timestamp":"2026-05-31T13:56:28.028Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"write_note","args":{"path":"raw/test-write.md","content":"# ***d."},"result":"success","durationMs":5,"timestamp":"2026-05-31T13:56:28.033Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"append_note","message":"raw/test-write.md","level":"info","args":{"approvalLevel":2},"timestamp":"2026-05-31T13:56:28.090Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"append_note","args":{"path":"raw/test-write.md","content":"\nA***t."},"result":"success","durationMs":3,"timestamp":"2026-05-31T13:56:28.093Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"patch_note","message":"raw/test-write.md","level":"info","args":{"approvalLevel":2},"timestamp":"2026-05-31T13:56:28.152Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"patch_note","args":{"path":"raw/test-write.md","target":"Hello world.","operation":"replace","replacement":"Hello universe."},"result":"success","durationMs":4,"timestamp":"2026-05-31T13:56:28.157Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"list_directory","message":"concepts","level":"info","args":{"approvalLevel":1},"timestamp":"2026-05-31T13:56:28.214Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"list_directory","args":{"path":"concepts"},"result":"success","durationMs":1,"timestamp":"2026-05-31T13:56:28.215Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"search_notes","message":"","level":"info","args":{"approvalLevel":1},"timestamp":"2026-05-31T13:56:28.277Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"search_notes","args":{"query":"attention"},"result":"success","durationMs":136,"timestamp":"2026-05-31T13:56:28.413Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"get_vault_stats","message":"","level":"info","args":{"approvalLevel":1},"timestamp":"2026-05-31T13:56:28.465Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"get_vault_stats","args":{},"result":"success","durationMs":19,"timestamp":"2026-05-31T13:56:28.484Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"read_file","message":"meta/ontology.md","level":"info","args":{"approvalLevel":1},"timestamp":"2026-05-31T13:56:28.542Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"read_file","args":{"path":"meta/ontology.md"},"result":"success","durationMs":2,"timestamp":"2026-05-31T13:56:28.544Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"move_note","message":"raw/test-write.md","level":"info","args":{"approvalLevel":4},"timestamp":"2026-05-31T13:56:28.603Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"move_note","args":{"from":"raw/test-write.md","to":"raw/test-moved.md"},"result":"success","durationMs":2,"timestamp":"2026-05-31T13:56:28.605Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"security","tool":"delete_note","reason":"Delete disabled by policy","blocked":true,"timestamp":"2026-05-31T13:56:28.665Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"security","tool":"delete_note","reason":"Delete disabled by policy","blocked":true,"timestamp":"2026-05-31T13:56:28.665Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"manage_tags","message":"concepts/neural-networks.md","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:28.728Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"error","tool":"manage_tags","args":{"operation":"list","path":"concepts/neural-networks.md"},"message":"Unknown operation: undefined","durationMs":1,"timestamp":"2026-05-31T13:56:28.729Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"error","tool":"manage_tags","message":"Unknown operation: undefined","blocked":false,"timestamp":"2026-05-31T13:56:28.729Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"graph_neighbors","message":"concepts/neural-networks.md","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:28.791Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"graph_neighbors","args":{"path":"concepts/neural-networks.md"},"result":"success","durationMs":0,"timestamp":"2026-05-31T13:56:28.791Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"fs_get_graph","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:28.853Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"fs_get_graph","args":{},"result":"success","durationMs":0,"timestamp":"2026-05-31T13:56:28.853Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"graph_detect_communities","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:28.916Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"graph_detect_communities","args":{},"result":"success","durationMs":1,"timestamp":"2026-05-31T13:56:28.917Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"graph_analyze_centrality","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:28.979Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"graph_analyze_centrality","args":{},"result":"success","durationMs":1,"timestamp":"2026-05-31T13:56:28.980Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"fs_graph_find_path","message":"concepts/neural-networks.md","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:29.041Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"fs_graph_find_path","args":{"from":"concepts/neural-networks.md","to":"concepts/attention-mechanism.md"},"result":"success","durationMs":0,"timestamp":"2026-05-31T13:56:29.041Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"bm25_search","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:29.102Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"bm25_search","args":{"query":"transformer"},"result":"success","durationMs":0,"timestamp":"2026-05-31T13:56:29.102Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"semantic_search","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:29.164Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"semantic_search","args":{"query":"neural networks"},"result":"success","durationMs":0,"timestamp":"2026-05-31T13:56:29.164Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"semantic_search_db","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:29.227Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"semantic_search_db","args":{"query":"AI"},"result":"success","durationMs":1,"timestamp":"2026-05-31T13:56:29.228Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"cli_backlinks","message":"concepts/neural-networks.md","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:29.289Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"error","tool":"cli_backlinks","args":{"path":"concepts/neural-networks.md"},"message":"[REDACTED]","durationMs":2139,"timestamp":"2026-05-31T13:56:31.428Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"error","tool":"cli_backlinks","message":"[REDACTED]","blocked":false,"timestamp":"2026-05-31T13:56:31.428Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"cli_orphans","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:31.487Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"error","tool":"cli_orphans","args":{},"message":"[REDACTED]","durationMs":438,"timestamp":"2026-05-31T13:56:31.925Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"error","tool":"cli_orphans","message":"[REDACTED]","blocked":false,"timestamp":"2026-05-31T13:56:31.925Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"cli_deadends","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:31.985Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"error","tool":"cli_deadends","args":{},"message":"[REDACTED]","durationMs":426,"timestamp":"2026-05-31T13:56:32.411Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"error","tool":"cli_deadends","message":"[REDACTED]","blocked":false,"timestamp":"2026-05-31T13:56:32.411Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"cli_unresolved","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:32.472Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"error","tool":"cli_unresolved","args":{},"message":"[REDACTED]","durationMs":423,"timestamp":"2026-05-31T13:56:32.895Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"error","tool":"cli_unresolved","message":"[REDACTED]","blocked":false,"timestamp":"2026-05-31T13:56:32.895Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"security","tool":"cli_properties","reason":"Tool cli_properties is not classified and requires explicit security classification","blocked":true,"timestamp":"2026-05-31T13:56:32.955Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"security","tool":"cli_properties","reason":"Tool cli_properties is not classified and requires explicit security classification","blocked":true,"timestamp":"2026-05-31T13:56:32.955Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"list_backups","message":"","level":"info","args":{"approvalLevel":1},"timestamp":"2026-05-31T13:56:33.017Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"list_backups","args":{},"result":"success","durationMs":8,"timestamp":"2026-05-31T13:56:33.025Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"mabs_list_models","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:33.079Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"mabs_list_models","args":{},"result":"success","durationMs":0,"timestamp":"2026-05-31T13:56:33.079Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"pool_list_vaults","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:33.140Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"pool_list_vaults","args":{},"result":"success","durationMs":1,"timestamp":"2026-05-31T13:56:33.141Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"get_context_bootstrap","message":"","level":"info","args":{"approvalLevel":1},"timestamp":"2026-05-31T13:56:33.202Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"get_context_bootstrap","args":{},"result":"success","durationMs":3,"timestamp":"2026-05-31T13:56:33.205Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"get_vault_rules","message":"","level":"info","args":{"approvalLevel":1},"timestamp":"2026-05-31T13:56:33.263Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"get_vault_rules","args":{},"result":"success","durationMs":0,"timestamp":"2026-05-31T13:56:33.263Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"validate_note","message":"concepts/neural-networks.md","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:33.327Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"validate_note","args":{"path":"concepts/neural-networks.md"},"result":"success","durationMs":1,"timestamp":"2026-05-31T13:56:33.328Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"dev_prompt_list","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:33.389Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"dev_prompt_list","args":{},"result":"success","durationMs":1,"timestamp":"2026-05-31T13:56:33.390Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"dev_skill_list","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:33.452Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"dev_skill_list","args":{},"result":"success","durationMs":1,"timestamp":"2026-05-31T13:56:33.453Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"dev_agent_list","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:33.516Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"dev_agent_list","args":{},"result":"success","durationMs":0,"timestamp":"2026-05-31T13:56:33.517Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"dev_workflow_list","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:33.580Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"dev_workflow_list","args":{},"result":"success","durationMs":1,"timestamp":"2026-05-31T13:56:33.581Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"dev_claude_md_get","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:33.642Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"dev_claude_md_get","args":{},"result":"success","durationMs":1,"timestamp":"2026-05-31T13:56:33.643Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"audit_log","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:33.704Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"audit_log","args":{},"result":"success","durationMs":1,"timestamp":"2026-05-31T13:56:33.705Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"dream_scan","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:33.767Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"dream_scan","args":{},"result":"success","durationMs":41,"timestamp":"2026-05-31T13:56:33.808Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"list_all_tags","message":"","level":"info","args":{"approvalLevel":1},"timestamp":"2026-05-31T13:56:33.860Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"list_all_tags","args":{},"result":"success","durationMs":14,"timestamp":"2026-05-31T13:56:33.874Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"build_index","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:33.939Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"build_index","args":{},"result":"success","durationMs":0,"timestamp":"2026-05-31T13:56:33.939Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"db_stats","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:34.002Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"db_stats","args":{},"result":"success","durationMs":0,"timestamp":"2026-05-31T13:56:34.002Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"batch_edit","message":"","level":"info","args":{"approvalLevel":4},"timestamp":"2026-05-31T13:56:34.065Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"batch_edit","message":"","level":"info","args":{"approvalLevel":4},"timestamp":"2026-05-31T13:56:34.065Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"batch_edit","args":{"filter":{"folder":"concepts"},"operation":"append","target":"","replacement":"","preview":true},"result":"success","durationMs":7,"timestamp":"2026-05-31T13:56:34.072Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"auth","tool":"rest_active_note","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:56:34.127Z","sessionId":"sess-f301a0a01d677c1e"}
+{"event":"tool_call","tool":"rest_active_note","args":{},"result":"success","durationMs":25,"timestamp":"2026-05-31T13:56:34.152Z","sessionId":"sess-f301a0a01d677c1e"}

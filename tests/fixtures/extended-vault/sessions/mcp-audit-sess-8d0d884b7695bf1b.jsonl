@@ -1,0 +1,15 @@
+{"event":"auth","tool":"fs_list_notes","message":"concepts","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:59:13.800Z","sessionId":"sess-8d0d884b7695bf1b"}
+{"event":"tool_call","tool":"fs_list_notes","args":{"folder":"concepts"},"result":"success","durationMs":1,"timestamp":"2026-05-31T13:59:13.801Z","sessionId":"sess-8d0d884b7695bf1b"}
+{"event":"auth","tool":"cli_search","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:59:13.860Z","sessionId":"sess-8d0d884b7695bf1b"}
+{"event":"error","tool":"cli_search","args":{"query":"neural"},"message":"[REDACTED]","durationMs":1494,"timestamp":"2026-05-31T13:59:15.355Z","sessionId":"sess-8d0d884b7695bf1b"}
+{"event":"error","tool":"cli_search","message":"[REDACTED]","blocked":false,"timestamp":"2026-05-31T13:59:15.355Z","sessionId":"sess-8d0d884b7695bf1b"}
+{"event":"security","tool":"cli_daily","reason":"Tool cli_daily is not classified and requires explicit security classification","blocked":true,"timestamp":"2026-05-31T13:59:15.413Z","sessionId":"sess-8d0d884b7695bf1b"}
+{"event":"security","tool":"cli_daily","reason":"Tool cli_daily is not classified and requires explicit security classification","blocked":true,"timestamp":"2026-05-31T13:59:15.413Z","sessionId":"sess-8d0d884b7695bf1b"}
+{"event":"auth","tool":"mabs_list_artifacts","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:59:15.475Z","sessionId":"sess-8d0d884b7695bf1b"}
+{"event":"tool_call","tool":"mabs_list_artifacts","args":{},"result":"success","durationMs":0,"timestamp":"2026-05-31T13:59:15.475Z","sessionId":"sess-8d0d884b7695bf1b"}
+{"event":"auth","tool":"mabs_list_sessions","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:59:15.536Z","sessionId":"sess-8d0d884b7695bf1b"}
+{"event":"tool_call","tool":"mabs_list_sessions","args":{},"result":"success","durationMs":0,"timestamp":"2026-05-31T13:59:15.536Z","sessionId":"sess-8d0d884b7695bf1b"}
+{"event":"auth","tool":"semantic_rag","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:59:15.597Z","sessionId":"sess-8d0d884b7695bf1b"}
+{"event":"tool_call","tool":"semantic_rag","args":{"query":"AI"},"result":"success","durationMs":0,"timestamp":"2026-05-31T13:59:15.597Z","sessionId":"sess-8d0d884b7695bf1b"}
+{"event":"auth","tool":"rest_dataview","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-05-31T13:59:15.659Z","sessionId":"sess-8d0d884b7695bf1b"}
+{"event":"tool_call","tool":"rest_dataview","args":{"query":"LIST FROM \"concepts\""},"result":"success","durationMs":28,"timestamp":"2026-05-31T13:59:15.687Z","sessionId":"sess-8d0d884b7695bf1b"}
