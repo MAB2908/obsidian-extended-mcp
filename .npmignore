@@ -1,0 +1,17 @@
+# v0.1b:
+src/
+tests/
+docs/
+Backup4/
+.github/
+.vscode/
+*.md
+!README.md
+.env
+.env.*
+!.env.example
+tsconfig.json
+vitest.config.ts
+package-lock.json
+node_modules/
+.mcp-cache/

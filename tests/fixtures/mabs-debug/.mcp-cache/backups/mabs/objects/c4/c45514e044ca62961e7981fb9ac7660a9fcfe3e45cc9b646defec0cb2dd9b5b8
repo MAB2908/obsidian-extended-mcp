@@ -1,0 +1,12 @@
+// v0.1b:
+{
+  "id": "p1",
+  "name": "Test",
+  "role": "r",
+  "context": "c",
+  "task": "t",
+  "acceptanceCriteria": [],
+  "variables": [],
+  "created": "2026-05-29T18:30:06.771Z",
+  "updated": "2026-05-29T18:30:06.771Z"
+}

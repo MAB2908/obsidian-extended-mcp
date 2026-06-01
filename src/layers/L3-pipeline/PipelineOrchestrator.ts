@@ -1,0 +1,321 @@
+// v0.1b:
+import { promises as fs } from 'fs';
+import type { IVaultManager } from '../../shared/interfaces/IVaultManager.js';
+import type { IGraphEngine } from '../../shared/interfaces/IGraphEngine.js';
+import type { IBM25Engine } from '../../shared/interfaces/IBM25Engine.js';
+import type { IBackgroundIndexer } from '../../shared/interfaces/IBackgroundIndexer.js';
+import type { IPipelineOrchestrator } from '../../shared/interfaces/IPipelineOrchestrator.js';
+import type { LLMAdapter } from '../L6-ai-core/LLMAdapter.js';
+import { pipelineConfig } from '../../shared/config.js';
+import { PipelineMetrics } from './PipelineMetrics.js';
+import {
+  IngestAgent,
+  QueryAgent,
+  TagAgent,
+  CompileAgent,
+  LinkAgent,
+  LintAgent,
+  EnrichAgent,
+} from '../L6-ai-core/agents/index.js';
+
+export class PipelineOrchestrator implements IPipelineOrchestrator {
+  private ingestAgent: IngestAgent;
+  private queryAgent: QueryAgent;
+  private tagAgent: TagAgent;
+  private compileAgent: CompileAgent;
+  private linkAgent: LinkAgent;
+  private lintAgent: LintAgent;
+  private enrichAgent: EnrichAgent;
+  readonly metrics: PipelineMetrics;
+
+  constructor(
+    private vault: IVaultManager,
+    private graph: IGraphEngine,
+    private bm25: IBM25Engine,
+    private indexer: IBackgroundIndexer,
+    adapter: LLMAdapter,
+    metrics?: PipelineMetrics,
+  ) {
+    this.ingestAgent = new IngestAgent(adapter);
+    this.queryAgent = new QueryAgent(adapter);
+    this.tagAgent = new TagAgent(adapter);
+    this.compileAgent = new CompileAgent(adapter);
+    this.linkAgent = new LinkAgent(adapter);
+    this.lintAgent = new LintAgent(adapter);
+    this.enrichAgent = new EnrichAgent(adapter);
+    this.metrics = metrics ?? new PipelineMetrics();
+  }
+
+  async runIngest(relPath: string): Promise<unknown> {
+    return this.metrics.measure('ingest', async () => {
+      const note = await this.vault.readNote(relPath);
+      const result = await this.ingestAgent.execute({ note });
+      const newFront = {
+        ...note.frontmatter,
+        summary: result.data.summary,
+        keyIdeas: result.data.keyIdeas,
+        tags: [...new Set([...note.tags, ...result.data.suggestedTags])],
+        entities: result.data.entities,
+      };
+      await this.vault.writeNote(relPath, note.content, { frontmatter: newFront, overwrite: true });
+      this.indexer.markDirty(relPath);
+      return result;
+    }, { itemsIn: 1, itemsOut: 1 });
+  }
+
+  async runTag(relPath: string, ontology: string[]): Promise<unknown> {
+    return this.metrics.measure('tag', async () => {
+      const note = await this.vault.readNote(relPath);
+      const result = await this.tagAgent.execute({
+        title: note.title,
+        content: note.content,
+        existingTags: note.tags,
+        ontology,
+      });
+      const merged = [...new Set([...note.tags, ...result.data.tags])];
+      const newFront = { ...note.frontmatter, tags: merged };
+      await this.vault.writeNote(relPath, note.content, { frontmatter: newFront, overwrite: true });
+      this.indexer.markDirty(relPath);
+      return result;
+    }, { itemsIn: 1, itemsOut: 1 });
+  }
+
+  async runQuery(question: string): Promise<unknown> {
+    return this.metrics.measure('query', async () => {
+      const results = this.bm25.search(question, 10);
+      const contextNotes = await Promise.all(
+        results.map(async (r) => {
+          const note = await this.vault.readNote(r.path, { includeContent: true });
+          return { path: r.path, title: note.title, snippet: r.snippet || note.content.slice(0, 500) };
+        })
+      );
+      const result = await this.queryAgent.execute({ question, contextNotes });
+      return result;
+    }, { itemsIn: 1, itemsOut: 1 });
+  }
+
+  async runCompile(sinceDays = pipelineConfig.compileSinceDays): Promise<unknown> {
+    return this.metrics.measure('compile', async () => {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - sinceDays);
+      const sources: Array<{ path: string; title: string; content: string; tags: string[]; frontmatter: Record<string, unknown>; created?: Date }> = [];
+      const concepts: Array<{ path: string; title: string; content: string; tags: string[]; frontmatter: Record<string, unknown>; created?: Date }> = [];
+      for await (const n of this.iterateAllNotes()) {
+        if (n.path.startsWith('concepts/')) {
+          concepts.push(n);
+        }
+        const created = n.frontmatter.created ? new Date(n.frontmatter.created as string) : n.created;
+        if (created && created >= cutoff) {
+          sources.push(n);
+        }
+      }
+      const graphSnapshot = JSON.stringify(this.graph.getGraph().nodes, null, 0);
+      const ontology = await this.vault.listAllTags();
+
+      const result = await this.compileAgent.execute({
+        sources,
+        existingConcepts: concepts.map((c) => c.title),
+        graphSnapshot,
+        ontology: Object.keys(ontology),
+      });
+
+      // Write new concepts with transaction rollback (C3)
+      const writtenConcepts: string[] = [];
+      const backups: Array<{ path: string; content?: string; frontmatter?: Record<string, unknown> }> = [];
+      try {
+        for (const c of result.data.newConcepts) {
+          // Backup existing content before overwrite (HIGH-007)
+          try {
+            const existing = await this.vault.readNote(c.file, { includeContent: true });
+            backups.push({ path: c.file, content: existing.content, frontmatter: existing.frontmatter });
+          } catch {
+            backups.push({ path: c.file });
+          }
+          await this.vault.writeNote(
+            c.file,
+            c.content,
+            { frontmatter: { title: c.title, tags: ['concept', c.domain], status: 'seedling' } }
+          );
+          writtenConcepts.push(c.file);
+        }
+        // Only mark dirty after all writes succeed (PO-002)
+        for (const writtenPath of writtenConcepts) {
+          this.indexer.markDirty(writtenPath);
+        }
+      } catch (writeErr) {
+        // Rollback: restore original content or delete newly created files
+        for (let i = 0; i < writtenConcepts.length; i++) {
+          const writtenPath = writtenConcepts[i];
+          const backup = backups[i];
+          try {
+            if (backup.content !== undefined) {
+              await this.vault.writeNote(writtenPath, backup.content, { frontmatter: backup.frontmatter, overwrite: true });
+            } else {
+              await this.vault.deleteNote(writtenPath);
+            }
+          } catch {
+            // best-effort cleanup
+          }
+        }
+        throw new Error(`Pipeline compile failed after writing ${writtenConcepts.length} concepts: ${(writeErr as Error).message}`);
+      }
+
+      // Update existing concepts
+      for (const u of result.data.updatedConcepts) {
+        try {
+          const note = await this.vault.readNote(u.file);
+          let section: string;
+          const idx = note.content.indexOf(u.appendTo);
+          if (idx !== -1) {
+            const before = note.content.slice(0, idx + u.appendTo.length);
+            const after = note.content.slice(idx + u.appendTo.length);
+            section = before + '\n' + u.content + '\n' + after;
+          } else {
+            section = note.content + '\n\n' + u.appendTo + '\n' + u.content;
+          }
+          await this.vault.writeNote(u.file, section, { overwrite: true });
+          this.indexer.markDirty(u.file);
+        } catch (err) {
+          console.error(`[PipelineOrchestrator] Failed to append to ${u.file}:`, err);
+        }
+      }
+
+      return result;
+    }, { itemsIn: sinceDays, itemsOut: 0 });
+  }
+
+  async runLink(relPath: string): Promise<unknown> {
+    return this.metrics.measure('link', async () => {
+      const note = await this.vault.readNote(relPath);
+      const concepts: Array<{ path: string; title: string; content: string; tags: string[]; frontmatter: Record<string, unknown>; created?: Date }> = [];
+      for await (const n of this.iterateAllNotes()) {
+        if (n.path.startsWith('concepts/')) {
+          concepts.push(n);
+        }
+      }
+      const result = await this.linkAgent.execute({
+        content: note.content,
+        title: note.title,
+        availableConcepts: concepts.map((c) => c.title),
+      });
+
+      let updated = note.content;
+      for (const s of result.data.suggestions) {
+        if (s.confidence >= pipelineConfig.minConfidence) {
+          updated = updated.replace(s.phrase, `[[${s.target}|${s.phrase}]]`);
+        }
+      }
+      if (updated !== note.content) {
+        await this.vault.writeNote(relPath, updated, { overwrite: true });
+        this.indexer.markDirty(relPath);
+      }
+      return result;
+    }, { itemsIn: 1, itemsOut: 1 });
+  }
+
+  async runLint(): Promise<unknown> {
+    return this.metrics.measure('lint', async () => {
+      const graph = this.graph.getGraph();
+      const allTags = await this.vault.listAllTags();
+
+    // Find old seedlings (status: seedling > 90 days)
+    const oldSeedlings: string[] = [];
+    const invalidTags: Array<{ tag: string; file: string }> = [];
+    const staleMocs: string[] = [];
+    const titleMap = new Map<string, string[]>();
+    const ontologyTags = new Set(Object.keys(allTags));
+    const mocAgeDays = pipelineConfig.mocAgeDays;
+
+    for await (const n of this.iterateAllNotes()) {
+      if (n.frontmatter.status === 'seedling' && n.created) {
+        const days = (Date.now() - n.created.getTime()) / (1000 * 60 * 60 * 24);
+        if (days > pipelineConfig.seedlingMaxAgeDays) oldSeedlings.push(n.path);
+      }
+      for (const t of n.tags) {
+        if (!ontologyTags.has(t)) invalidTags.push({ tag: t, file: n.path });
+      }
+      const isMoc = n.path.startsWith('index/') || n.path.startsWith('moc/') || n.tags.includes('moc');
+      if (isMoc) {
+        try {
+          const fullPath = await this.vault.resolvePath(n.path);
+          const stat = await fs.stat(fullPath);
+          const daysSinceMod = (Date.now() - stat.mtime.getTime()) / (1000 * 60 * 60 * 24);
+          if (daysSinceMod > mocAgeDays) staleMocs.push(n.path);
+        } catch (err) {
+          console.error(`[PipelineOrchestrator] Failed to stat MOC ${n.path}:`, err);
+        }
+      }
+      const list = titleMap.get(n.title) || [];
+      list.push(n.path);
+      titleMap.set(n.title, list);
+    }
+
+    const duplicateTitles = Array.from(titleMap.entries())
+      .filter(([, paths]) => paths.length > 1)
+      .map(([title, paths]) => ({ title, paths }));
+
+    const result = await this.lintAgent.execute({
+      orphans: graph.orphans,
+      deadends: graph.deadends,
+      unresolved: graph.unresolved,
+      staleMocs,
+      oldSeedlings,
+      duplicateTitles,
+      invalidTags,
+      ontology: Object.keys(allTags),
+    });
+
+      return result;
+    }, { itemsIn: 1, itemsOut: 1 });
+  }
+
+  async runEnrich(relPath: string): Promise<unknown> {
+    return this.metrics.measure('enrich', async () => {
+    const note = await this.vault.readNote(relPath);
+    const neighbors = this.graph.getNeighbors(relPath, 'both');
+    const result = await this.enrichAgent.execute({
+      title: note.title,
+      content: note.content,
+      existingFrontmatter: note.frontmatter,
+      relatedConcepts: neighbors,
+    });
+
+    const newFront = {
+      ...note.frontmatter,
+      summary: result.data.summary,
+      keyPoints: result.data.keyPoints,
+      tags: [...new Set([...note.tags, ...result.data.suggestedTags])],
+    };
+      await this.vault.writeNote(relPath, note.content, { frontmatter: newFront, overwrite: true });
+      this.indexer.markDirty(relPath);
+      return result;
+    }, { itemsIn: 1, itemsOut: 1 });
+  }
+
+  private async *iterateAllNotes(): AsyncGenerator<{ path: string; title: string; content: string; tags: string[]; frontmatter: Record<string, unknown>; created?: Date }> {
+    const walk = async function* (vault: IVaultManager, dir: string): AsyncGenerator<{ path: string; title: string; content: string; tags: string[]; frontmatter: Record<string, unknown>; created?: Date }> {
+      const entries = await vault.listDirectory(dir);
+      for (const e of entries) {
+        const rel = dir ? `${dir}/${e.name}` : e.name;
+        if (e.isDirectory) {
+          yield* walk(vault, rel);
+        } else if (e.name.endsWith('.md')) {
+          try {
+            const note = await vault.readNote(rel, { includeContent: true });
+            yield {
+              path: rel,
+              title: note.title,
+              content: note.content,
+              tags: note.tags,
+              frontmatter: note.frontmatter,
+              created: note.created,
+            };
+          } catch {
+            // skip unreadable
+          }
+        }
+      }
+    };
+    yield* walk(this.vault, '');
+  }
+}

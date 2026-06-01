@@ -1,0 +1,1 @@
+This is a plain text attachment for testing file type routing.

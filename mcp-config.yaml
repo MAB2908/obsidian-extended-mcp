@@ -1,0 +1,98 @@
+# v0.1b:
+# Obsidian Extended MCP Configuration
+# This file is optional; environment variables override these values.
+# Place this file in the project root or set MCP_CONFIG_PATH to point to it.
+
+server:
+  vaultPath: ./vault
+  multiVault: false
+  authToken: ''
+  enforceOntology: false
+
+llm:
+  defaultProvider: openai
+  openAiKey: ''
+  openAiModel: ''
+  anthropicKey: ''
+  anthropicModel: ''
+  ollamaBaseUrl: http://localhost:11434
+  ollamaModel: ''
+  maxCacheSize: 1000
+  cacheTtlMs: 3600000
+  maxRetries: 3
+  retryBaseDelayMs: 1000
+
+semantic:
+  enabled: false
+  embedModel: text-embedding-3-small
+  ollamaEmbedModel: nomic-embed-text
+  bm25K1: 1.5
+  bm25B: 0.75
+  bm25DefaultLimit: 50
+  rrfK: 60
+  pageRankIterations: 20
+  pageRankDamping: 0.85
+  communityMaxPasses: 10
+  pathMaxDepth: 5
+  indexerDebounceMs: 2000
+  semanticSearchLimit: 20
+  semanticRagTopK: 5
+
+security:
+  approvalMode: auto
+  readOnly: false
+  enableCommands: true
+  enableEval: true
+  enableBatchEdit: true
+  enableDelete: true
+  safeZones:
+    - raw/
+    - sessions/
+  writePaths:
+    - '*'
+  forbiddenPaths:
+    - .git/
+    - .obsidian/
+    - .trash/
+  sandboxTimeoutMs: 5000
+  sandboxAllowedGlobals:
+    - app
+    - DataviewAPI
+    - moment
+    - MetadataCache
+  auditFormat: jsonl
+  auditMaxAgeDays: 30
+  auditBatchSize: 100
+  auditFlushIntervalMs: 5000
+  auditRotationMb: 10
+
+bridge:
+  obsidianCliPath: ''
+  restApiUrl: http://localhost:27123
+  restApiToken: ''
+
+pipeline:
+  compileSinceDays: 7
+  mocAgeDays: 30
+  minConfidence: 0.7
+  seedlingMaxAgeDays: 90
+
+fs:
+  trashDir: .trash
+  backupDir: .mcp-cache/backups
+  maxBackups: 20
+
+fileType:
+  textExtensions:
+    - .md
+    - .txt
+    - .json
+    - .canvas
+    - .svg
+    - .css
+    - .js
+    - .ts
+    - .html
+    - .xml
+    - .yaml
+    - .yml

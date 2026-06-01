@@ -1,0 +1,13 @@
+# v0.1b:
+node_modules/
+dist/
+*.log
+.env
+.vscode/
+.idea/
+coverage/
+*.tmp
+vault/
+/test-vault/
+Backup7/
+.npmrc

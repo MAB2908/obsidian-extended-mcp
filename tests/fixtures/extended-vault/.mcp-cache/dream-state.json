@@ -1,0 +1,405 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-31T13:56:33.806Z",
+  "activeSessions": [
+    {
+      "sessionId": "e7be7e47-89fc-4914-917c-993ca91fb831",
+      "timestamp": "2026-05-31T13:56:33.806Z",
+      "vaultPath": "C:\\Users\\user\\Documents\\Obsidian Vault\\Проекты\\M@B_Obsidian\\tests\\fixtures\\extended-vault",
+      "candidates": {
+        "link": [
+          {
+            "kind": "link",
+            "sourcePath": "resources/papers/attention-is-all-you-need.md",
+            "targetPath": "index/MOC-ai.md",
+            "score": 20.051525313092107,
+            "reason": "BM25 score 20.05 on title \"Attention Is All You Need\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "concepts/rag.md",
+            "targetPath": "areas/ai-research/semantic-search.md",
+            "score": 14.837902518796298,
+            "reason": "BM25 score 14.84 on title \"RAG: Retrieval Augmented Generation\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "concepts/rag.md",
+            "targetPath": "index/MOC-ai.md",
+            "score": 13.848568994322711,
+            "reason": "BM25 score 13.85 on title \"RAG: Retrieval Augmented Generation\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "areas/devops/ci-cd-pipeline.md",
+            "targetPath": "daily/2026/05/2026-05-20.md",
+            "score": 13.701490675623955,
+            "reason": "BM25 score 13.70 on title \"CI/CD Pipeline\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "daily/2026/05/2026-05-20.md",
+            "targetPath": "projects/project-mcp-obsidian.md",
+            "score": 13.273715641119608,
+            "reason": "BM25 score 13.27 on title \"2026-05-20\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "resources/books/deep-learning-book.md",
+            "targetPath": "daily/2026/05/2026-05-21.md",
+            "score": 11.455934942688506,
+            "reason": "BM25 score 11.46 on title \"Deep Learning Book\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "resources/books/deep-learning-book.md",
+            "targetPath": "index/MOC-ai.md",
+            "score": 10.799904235439499,
+            "reason": "BM25 score 10.80 on title \"Deep Learning Book\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "daily/2026/05/2026-05-21.md",
+            "targetPath": "projects/project-mcp-obsidian.md",
+            "score": 9.144267244596318,
+            "reason": "BM25 score 9.14 on title \"2026-05-21\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "daily/2026/05/2026-05-22.md",
+            "targetPath": "projects/project-mcp-obsidian.md",
+            "score": 9.144267244596318,
+            "reason": "BM25 score 9.14 on title \"2026-05-22\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "daily/2026/05/2026-05-20.md",
+            "targetPath": "daily/2026/05/2026-05-22.md",
+            "score": 8.686463591122768,
+            "reason": "BM25 score 8.69 on title \"2026-05-20\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "daily/2026/05/2026-05-21.md",
+            "targetPath": "daily/2026/05/2026-05-22.md",
+            "score": 8.686463591122768,
+            "reason": "BM25 score 8.69 on title \"2026-05-21\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "daily/2026/05/2026-05-20.md",
+            "targetPath": "daily/2026/05/2026-05-21.md",
+            "score": 8.677127992221369,
+            "reason": "BM25 score 8.68 on title \"2026-05-20\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "concepts/attention-mechanism.md",
+            "targetPath": "resources/papers/attention-is-all-you-need.md",
+            "score": 8.597262150459297,
+            "reason": "BM25 score 8.60 on title \"Attention Mechanism\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "index/MOC-productivity.md",
+            "targetPath": "meta/ontology.md",
+            "score": 8.573014556280068,
+            "reason": "BM25 score 8.57 on title \"MOC: Productivity\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "projects/project-second-brain.md",
+            "targetPath": "index/MOC-productivity.md",
+            "score": 8.239619141073918,
+            "reason": "BM25 score 8.24 on title \"Project: Second Brain\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "concepts/attention-mechanism.md",
+            "targetPath": "concepts/transformers.md",
+            "score": 8.028734435602587,
+            "reason": "BM25 score 8.03 on title \"Attention Mechanism\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "projects/project-api-gateway.md",
+            "targetPath": "index/MOC-dev.md",
+            "score": 8.01749533141557,
+            "reason": "BM25 score 8.02 on title \"Project: API Gateway\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "concepts/attention-mechanism.md",
+            "targetPath": "index/MOC-ai.md",
+            "score": 8.00405267152823,
+            "reason": "BM25 score 8.00 on title \"Attention Mechanism\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "areas/ai-research/semantic-search.md",
+            "targetPath": "daily/2026/05/2026-05-20.md",
+            "score": 7.883184061075049,
+            "reason": "BM25 score 7.88 on title \"Semantic Search\""
+          },
+          {
+            "kind": "link",
+            "sourcePath": "areas/ai-research/semantic-search.md",
+            "targetPath": "concepts/embedding.md",
+            "score": 7.863875545831464,
+            "reason": "BM25 score 7.86 on title \"Semantic Search\""
+          }
+        ],
+        "merge": [
+          {
+            "kind": "merge",
+            "sourcePath": "daily/2026/05/2026-05-20.md",
+            "targetPath": "daily/2026/05/2026-05-21.md",
+            "score": 44.89014748386273,
+            "reason": "High similarity (BM25 44.89) between \"2026-05-20\" and \"2026-05-21\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "daily/2026/05/2026-05-20.md",
+            "targetPath": "projects/project-mcp-obsidian.md",
+            "score": 40.52576354987614,
+            "reason": "High similarity (BM25 40.53) between \"2026-05-20\" and \"Project: MCP Obsidian\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "daily/2026/05/2026-05-21.md",
+            "targetPath": "daily/2026/05/2026-05-22.md",
+            "score": 40.3300508860617,
+            "reason": "High similarity (BM25 40.33) between \"2026-05-21\" and \"2026-05-22\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "areas/ai-research/semantic-search.md",
+            "targetPath": "concepts/embedding.md",
+            "score": 40.06624504643456,
+            "reason": "High similarity (BM25 40.07) between \"Semantic Search\" and \"Embedding\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "daily/2026/05/2026-05-21.md",
+            "targetPath": "projects/project-mcp-obsidian.md",
+            "score": 39.50312688943802,
+            "reason": "High similarity (BM25 39.50) between \"2026-05-21\" and \"Project: MCP Obsidian\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "projects/project-mcp-obsidian.md",
+            "targetPath": "index/MOC-ai.md",
+            "score": 38.67188713755722,
+            "reason": "High similarity (BM25 38.67) between \"Project: MCP Obsidian\" and \"MOC: Artificial Intelligence\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "index/MOC-productivity.md",
+            "targetPath": "meta/ontology.md",
+            "score": 37.12535532267849,
+            "reason": "High similarity (BM25 37.13) between \"MOC: Productivity\" and \"ontology\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "meta/templates/project.md",
+            "targetPath": "projects/project-mcp-obsidian.md",
+            "score": 35.571002206288824,
+            "reason": "High similarity (BM25 35.57) between \"{{title}}\" and \"Project: MCP Obsidian\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "daily/2026/05/2026-05-20.md",
+            "targetPath": "daily/2026/05/2026-05-22.md",
+            "score": 35.3067619276426,
+            "reason": "High similarity (BM25 35.31) between \"2026-05-20\" and \"2026-05-22\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "concepts/transformers.md",
+            "targetPath": "resources/papers/attention-is-all-you-need.md",
+            "score": 34.66230251378926,
+            "reason": "High similarity (BM25 34.66) between \"Transformers\" and \"Attention Is All You Need\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "concepts/attention-mechanism.md",
+            "targetPath": "resources/papers/attention-is-all-you-need.md",
+            "score": 33.69708407840302,
+            "reason": "High similarity (BM25 33.70) between \"Attention Mechanism\" and \"Attention Is All You Need\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "projects/project-mcp-obsidian.md",
+            "targetPath": "projects/project-second-brain.md",
+            "score": 31.848232134623792,
+            "reason": "High similarity (BM25 31.85) between \"Project: MCP Obsidian\" and \"Project: Second Brain\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "daily/2026/05/2026-05-22.md",
+            "targetPath": "projects/project-mcp-obsidian.md",
+            "score": 31.452908728559485,
+            "reason": "High similarity (BM25 31.45) between \"2026-05-22\" and \"Project: MCP Obsidian\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "areas/devops/ci-cd-pipeline.md",
+            "targetPath": "daily/2026/05/2026-05-20.md",
+            "score": 31.119962364919065,
+            "reason": "High similarity (BM25 31.12) between \"CI/CD Pipeline\" and \"2026-05-20\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "concepts/attention-mechanism.md",
+            "targetPath": "concepts/transformers.md",
+            "score": 30.982285740276758,
+            "reason": "High similarity (BM25 30.98) between \"Attention Mechanism\" and \"Transformers\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "concepts/rag.md",
+            "targetPath": "index/MOC-ai.md",
+            "score": 30.775449276535493,
+            "reason": "High similarity (BM25 30.78) between \"RAG: Retrieval Augmented Generation\" and \"MOC: Artificial Intelligence\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "concepts/backpropagation.md",
+            "targetPath": "concepts/neural-networks.md",
+            "score": 29.643173043549368,
+            "reason": "High similarity (BM25 29.64) between \"Backpropagation\" and \"Neural Networks\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "people/person-yann-lecun.md",
+            "targetPath": "index/MOC-ai.md",
+            "score": 29.255879038631697,
+            "reason": "High similarity (BM25 29.26) between \"Yann LeCun\" and \"MOC: Artificial Intelligence\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "concepts/large-note-test.md",
+            "targetPath": "concepts/unicode-テスト.md",
+            "score": 28.262473161717075,
+            "reason": "High similarity (BM25 28.26) between \"large-note-test\" and \"Unicode Test テスト\""
+          },
+          {
+            "kind": "merge",
+            "sourcePath": "concepts/rag.md",
+            "targetPath": "concepts/embedding.md",
+            "score": 27.84129674983793,
+            "reason": "High similarity (BM25 27.84) between \"RAG: Retrieval Augmented Generation\" and \"Embedding\""
+          }
+        ],
+        "prune": [],
+        "synthesize": [
+          {
+            "kind": "synthesize",
+            "domain": "concepts",
+            "paths": [
+              "concepts/api-design.md",
+              "concepts/attention-mechanism.md",
+              "concepts/backpropagation.md",
+              "concepts/embedding.md",
+              "concepts/empty-note.md",
+              "concepts/large-note-test.md",
+              "concepts/llm-alignment.md",
+              "concepts/neural-networks.md",
+              "concepts/rag.md",
+              "concepts/special-chars-[test].md",
+              "concepts/transformers.md",
+              "concepts/unicode-テスト.md"
+            ],
+            "score": 12,
+            "reason": "12 notes in domain \"concepts\" — consider an overview MOC",
+            "proposedTitle": "Concepts Overview"
+          },
+          {
+            "kind": "synthesize",
+            "domain": "meta",
+            "paths": [
+              "meta/ontology.md",
+              "meta/templates/concept.md",
+              "meta/templates/project.md",
+              "meta/templates/source.md"
+            ],
+            "score": 4,
+            "reason": "4 notes in domain \"meta\" — consider an overview MOC",
+            "proposedTitle": "Meta Overview"
+          },
+          {
+            "kind": "synthesize",
+            "domain": "areas",
+            "paths": [
+              "areas/ai-research/semantic-search.md",
+              "areas/devops/ci-cd-pipeline.md",
+              "areas/productivity/zettelkasten.md"
+            ],
+            "score": 3,
+            "reason": "3 notes in domain \"areas\" — consider an overview MOC",
+            "proposedTitle": "Areas Overview"
+          },
+          {
+            "kind": "synthesize",
+            "domain": "daily",
+            "paths": [
+              "daily/2026/05/2026-05-20.md",
+              "daily/2026/05/2026-05-21.md",
+              "daily/2026/05/2026-05-22.md"
+            ],
+            "score": 3,
+            "reason": "3 notes in domain \"daily\" — consider an overview MOC",
+            "proposedTitle": "Daily Overview"
+          },
+          {
+            "kind": "synthesize",
+            "domain": "index",
+            "paths": [
+              "index/MOC-ai.md",
+              "index/MOC-dev.md",
+              "index/MOC-productivity.md"
+            ],
+            "score": 3,
+            "reason": "3 notes in domain \"index\" — consider an overview MOC",
+            "proposedTitle": "Index Overview"
+          },
+          {
+            "kind": "synthesize",
+            "domain": "people",
+            "paths": [
+              "people/person-andrej-karpathy.md",
+              "people/person-nick-bostrom.md",
+              "people/person-yann-lecun.md"
+            ],
+            "score": 3,
+            "reason": "3 notes in domain \"people\" — consider an overview MOC",
+            "proposedTitle": "People Overview"
+          },
+          {
+            "kind": "synthesize",
+            "domain": "projects",
+            "paths": [
+              "projects/project-api-gateway.md",
+              "projects/project-mcp-obsidian.md",
+              "projects/project-second-brain.md"
+            ],
+            "score": 3,
+            "reason": "3 notes in domain \"projects\" — consider an overview MOC",
+            "proposedTitle": "Projects Overview"
+          },
+          {
+            "kind": "synthesize",
+            "domain": "resources",
+            "paths": [
+              "resources/books/deep-learning-book.md",
+              "resources/papers/attention-is-all-you-need.md"
+            ],
+            "score": 2,
+            "reason": "2 notes in domain \"resources\" — consider an overview MOC",
+            "proposedTitle": "Resources Overview"
+          }
+        ]
+      }
+    }
+  ]
+}
