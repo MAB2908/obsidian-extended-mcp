@@ -1,4 +1,4 @@
-v0.1b: 
+v0.2b: 
 ---
 title: "Attention Is All You Need"
 date: 2026-05-12

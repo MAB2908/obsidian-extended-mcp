@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import type { LLMRequest, AIResult, TaskComplexity, ModelCapability } from '../../shared/types.js';
 import { createHash } from 'crypto';
 import { llmConfig } from '../../shared/config.js';

@@ -1,4 +1,4 @@
-v0.1b: 
+v0.2b: 
 # Справочник Local REST API — Fallback Layer 2b
 
 > **Версия:** 0.1b  

@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import type { LLMProvider, LLMRequest } from '../LLMAdapter.js';
 import type { AIResult, ModelCapability } from '../../../shared/types.js';
 import { LLMHttpError } from '../../../shared/errors.js';

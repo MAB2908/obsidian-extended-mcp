@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import type { IBM25Engine } from '../../../shared/interfaces/IBM25Engine.js';
 import type { DreamTopic, LinkCandidate } from '../types.js';
 

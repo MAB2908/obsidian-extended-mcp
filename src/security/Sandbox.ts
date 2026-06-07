@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { createContext, Script } from 'node:vm';
 import { securityConfig } from '../shared/config.js';
 

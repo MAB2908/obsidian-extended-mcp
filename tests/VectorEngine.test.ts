@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { describe, it, expect, vi } from 'vitest';
 import { VectorEngine } from '../src/layers/L4-semantic/VectorEngine.js';
 

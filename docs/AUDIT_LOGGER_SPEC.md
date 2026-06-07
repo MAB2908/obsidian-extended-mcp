@@ -1,4 +1,4 @@
-v0.1b: 
+v0.2b: 
 # Спецификация Audit Logger: Obsidian Extended MCP
 
 > **Версия:** 0.1b  

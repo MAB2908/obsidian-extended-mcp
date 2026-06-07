@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// v0.1.0-beta.1:
-// v0.1.0-beta.1:
+// v0.2.0-beta.0:
+// v0.2.0-beta.0:
 import { Command } from 'commander';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -8,7 +8,7 @@ import { VaultManager } from '../L1-filesystem/VaultManager.js';
 
 const program = new Command();
 
-program.name('obsidian-mcp').description('Obsidian Extended MCP CLI').version('0.1.0-beta.1');
+program.name('obsidian-mcp').description('Obsidian Extended MCP CLI').version('0.2.0-beta.0');
 
 program
   .command('init-meta')

@@ -1,4 +1,4 @@
-v0.1b: 
+v0.2b: 
 ---
 title: "LLM Alignment"
 date: 2026-05-15

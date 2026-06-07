@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import type { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import type { JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js';
 

@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 export interface IBackgroundIndexer {
   initialize(): Promise<void>;
   markDirty(path: string): void;

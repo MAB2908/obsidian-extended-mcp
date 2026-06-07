@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 export interface IPipelineOrchestrator {
   runIngest(relPath: string): Promise<unknown>;
   runCompile(sinceDays?: number): Promise<unknown>;

@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { describe, it, expect, vi } from 'vitest';
 import { AnthropicProvider } from '../src/layers/L6-ai-core/providers/AnthropicProvider.js';
 import { LLMProviderError } from '../src/shared/errors.js';

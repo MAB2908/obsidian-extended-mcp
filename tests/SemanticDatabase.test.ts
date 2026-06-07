@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SemanticDatabase } from '../src/layers/L4-semantic/SemanticDatabase.js';
 import { promises as fs } from 'fs';

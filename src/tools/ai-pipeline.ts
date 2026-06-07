@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import type { ToolHandler } from '../shared/types.js';
 import type { VaultContext } from '../layers/L1-filesystem/VaultRouter.js';
 import { PipelineError } from '../shared/errors.js';

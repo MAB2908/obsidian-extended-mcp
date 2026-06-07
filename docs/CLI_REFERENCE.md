@@ -1,4 +1,4 @@
-v0.1b: 
+v0.2b: 
 # Справочник Obsidian CLI — Extended MCP
 
 > **Версия:** 0.1b  

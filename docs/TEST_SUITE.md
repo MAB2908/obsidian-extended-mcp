@@ -1,4 +1,4 @@
-v0.1b: 
+v0.2b: 
 # Тестовый набор — Obsidian Extended MCP
 
 > **Версия:** 2.11.0  
@@ -386,7 +386,7 @@ describe('Cross-Reference Integrity', () => {
 
 ```bash
 # E2E: полный цикл через CLI
-npx obsidian-extended-mcp ./test-vault << 'EOF'
+node dist/index.js << 'EOF'
 {"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"ai_ingest","arguments":{"raw_path":"raw/2026-05-20-article-transformers.md"}}}
 EOF
 ```

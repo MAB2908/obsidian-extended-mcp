@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({

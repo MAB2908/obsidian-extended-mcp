@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { promises as fs } from 'fs';
 import type { IVaultManager } from '../../shared/interfaces/IVaultManager.js';
 import type { IGraphEngine } from '../../shared/interfaces/IGraphEngine.js';

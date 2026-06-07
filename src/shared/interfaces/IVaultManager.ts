@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import type { Note, ReadNoteOptions, WriteNoteOptions, DeleteOptions, SearchResult, SearchOptions } from '../types.js';
 import type { ValidationResult } from '../TagEngine.js';
 

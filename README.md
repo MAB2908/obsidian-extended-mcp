@@ -1,4 +1,4 @@
-# Obsidian Extended MCP v0.1b
+# Obsidian Extended MCP v0.2b
 
 AI-first Knowledge Base Server integrating Obsidian with MCP clients.
 
@@ -41,7 +41,15 @@ obsidian-mcp init-meta --path ./vault
 3. Run the MCP server:
 
 ```bash
-npx obsidian-mcp
+node dist/index.js
+```
+
+Or configure your MCP client (Claude Desktop, Kimi, Cursor, etc.) to run:
+```json
+{
+  "command": "node",
+  "args": ["C:\\Users\\user\\obsidian-extended-mcp\\dist\\index.js"]
+}
 ```
 
 ## Configuration

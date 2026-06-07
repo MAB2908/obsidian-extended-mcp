@@ -1,4 +1,4 @@
-v0.1b: 
+v0.2b: 
 ---
 title: "Project: Second Brain"
 date: 2026-05-18

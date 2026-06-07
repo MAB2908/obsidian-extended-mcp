@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 export class McpError extends Error {
   readonly code: string;
   readonly layer: string;

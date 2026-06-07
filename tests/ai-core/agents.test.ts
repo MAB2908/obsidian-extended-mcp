@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { describe, it, expect } from 'vitest';
 import { LLMAdapter } from '../../src/layers/L6-ai-core/LLMAdapter.js';
 import {

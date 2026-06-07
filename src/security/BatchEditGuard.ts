@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { promises as fs, constants } from 'fs';
 import { createHash } from 'crypto';
 import path from 'path';

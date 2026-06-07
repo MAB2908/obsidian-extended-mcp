@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { describe, it, expect } from 'vitest';
 import { validatePath, tokenize, hashKey, slugify } from '../src/shared/utils.js';
 import { PathSecurityError } from '../src/shared/errors.js';

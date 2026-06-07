@@ -1,4 +1,4 @@
-v0.1b: 
+v0.2b: 
 ---
 title: "Attention Mechanism"
 date: 2026-05-12

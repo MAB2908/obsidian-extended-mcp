@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { describe, it, expect } from 'vitest';
 import { BM25Engine } from '../src/layers/L4-semantic/BM25Engine.js';
 

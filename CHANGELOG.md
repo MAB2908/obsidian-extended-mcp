@@ -1,5 +1,11 @@
-v0.1b: 
+v0.2b: 
 # Changelog
+
+## v0.2b (2026-06-07)
+
+### 🔴 Fixes
+- **MCP server launch docs fixed**: README, INSTALLATION_GUIDE, QUICKSTART, and all client configs now correctly reference `node dist/index.js` as the MCP server entry point instead of `npx obsidian-mcp` / `npx obsidian-extended-mcp` (which launch the CLI and immediately exit with help output)
+- **Version bump**: `0.1.0-beta.1` → `0.2.0-beta.0` across `package.json`, `src/index.ts`, `src/layers/L5-bootstrap/cli.ts`, and all source headers
 
 ## v0.1b (2026-05-30)
 

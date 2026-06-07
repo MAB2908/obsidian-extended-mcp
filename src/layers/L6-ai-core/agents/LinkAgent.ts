@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { AIAgent } from './base.js';
 import type { AIResult } from '../../../shared/types.js';
 

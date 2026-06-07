@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import type { IGraphEngine } from '../../shared/interfaces/IGraphEngine.js';
 import type { GraphNode, GraphEdge, Graph } from '../../shared/types.js';
 import { semanticConfig } from '../../shared/config.js';

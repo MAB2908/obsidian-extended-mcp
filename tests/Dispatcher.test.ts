@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { describe, it, expect } from 'vitest';
 import { Dispatcher } from '../src/layers/L3-pipeline/Dispatcher.js';
 import { AuditLogger } from '../src/security/AuditLogger.js';

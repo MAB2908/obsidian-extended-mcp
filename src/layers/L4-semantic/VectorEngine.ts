@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import type { IVectorEngine } from '../../shared/interfaces/IVectorEngine.js';
 import type { SearchResult } from '../../shared/types.js';
 import type { EmbeddingProvider } from './EmbeddingProvider.js';

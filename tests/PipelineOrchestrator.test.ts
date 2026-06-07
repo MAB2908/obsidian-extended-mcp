@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { describe, it, expect, vi } from 'vitest';
 import { VaultManager } from '../src/layers/L1-filesystem/VaultManager.js';
 import { GraphEngine } from '../src/layers/L4-semantic/GraphEngine.js';

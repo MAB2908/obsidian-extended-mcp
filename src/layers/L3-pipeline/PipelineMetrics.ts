@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 // ───────────────────────────────────────────
 // Pipeline Metrics — structured timing & outcome logging for stages
 // ───────────────────────────────────────────

@@ -1,4 +1,4 @@
-v0.1b: 
+v0.2b: 
 ---
 title: "Deprecated: v1 API"
 date: 2026-04-01

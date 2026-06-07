@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import type { LLMProvider, LLMRequest, AIResult } from '../../src/shared/types.js';
 
 function isIngest(messages: Array<{ role: string; content: string }>): boolean {

@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 // ───────────────────────────────────────────
 // Session Lock Service — prevents concurrent dreaming sessions per vault
 // ───────────────────────────────────────────

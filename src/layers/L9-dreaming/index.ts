@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 export { DreamingEngine } from './DreamingEngine.js';
 export { SignalStore } from './SignalStore.js';
 export { TopicLoader } from './TopicLoader.js';

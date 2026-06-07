@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import type { LLMAdapter } from '../LLMAdapter.js';
 import type { AIResult, TaskComplexity, LLMMessage } from '../../../shared/types.js';
 

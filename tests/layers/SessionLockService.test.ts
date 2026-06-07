@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SessionLockService } from '../../src/layers/L9-dreaming/SessionLockService.js';
 

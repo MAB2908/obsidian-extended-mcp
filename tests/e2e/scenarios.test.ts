@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { setupTestServer, teardownTestServer, type TestServer } from './harness.js';
 

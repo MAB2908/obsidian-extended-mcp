@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import type { ToolHandler } from '../shared/types.js';
 import { ModelAwareBackupService } from '../shared/ModelAwareBackupService.js';
 import { safeJsonParse } from '../shared/utils.js';

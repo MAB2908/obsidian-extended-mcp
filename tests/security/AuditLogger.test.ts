@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { AuditLogger } from '../../src/security/AuditLogger.js';
 import { promises as fs } from 'fs';

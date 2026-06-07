@@ -66,7 +66,7 @@ npm install -g obsidian-extended-mcp
 
 После установки бинарник доступен как:
 ```bash
-obsidian-mcp --version    # 0.1b
+obsidian-mcp --version    # 0.2b
 ```
 
 ### Способ B: Локальная установка в проекте
@@ -78,15 +78,18 @@ npm init -y
 npm install obsidian-extended-mcp
 ```
 
-Запуск через npx:
+Запуск MCP-сервера:
 ```bash
-npx obsidian-mcp
+node dist/index.js
 ```
 
 ### Способ C: Запуск без установки (через npx)
 
+> **Note:** The package must be built locally. `npx` will not resolve unpublished packages.
+
 ```bash
-npx obsidian-extended-mcp --path /path/to/your/vault
+cd /path/to/obsidian-extended-mcp
+node dist/index.js
 ```
 
 ### Способ D: Сборка из исходников (для разработки)
@@ -423,7 +426,7 @@ fileType:
 
 ```bash
 # Через env
-MCP_CONFIG_PATH=/path/to/config.yaml npx obsidian-mcp
+MCP_CONFIG_PATH=/path/to/config.yaml node dist/index.js
 
 # Или в .env
 MCP_CONFIG_PATH=/path/to/config.yaml
@@ -511,30 +514,38 @@ Vault check results:
 ```
 
 **С использованием .env:**
+> **Note:** The MCP server entry point is `dist/index.js`. The `obsidian-mcp` binary is a CLI utility (init-meta, check, rollback) and will not start the MCP server.
+
 ```json
 {
   "mcpServers": {
     "obsidian": {
-      "command": "npx",
-      "args": ["obsidian-extended-mcp"]
+      "command": "node",
+      "args": ["/path/to/obsidian-extended-mcp/dist/index.js"],
+      "env": {
+        "OBSIDIAN_VAULT_PATH": "/Users/you/Documents/Obsidian Vault",
+        "OPENAI_API_KEY": "sk-your-key",
+        "DEFAULT_LLM_PROVIDER": "openai"
+      }
     }
   }
 }
 ```
 
-При этом `.env` должен лежать в рабочей директории Claude Desktop.
-
 ### 7.2. Kimi CLI
 
-Файл: `~/.kimi/mcp-config.json`
+Файл: `~/.kimi/mcp.json`
 
 ```json
 {
-  "obsidian": {
-    "command": "npx",
-    "args": ["obsidian-extended-mcp", "--path", "/path/to/vault"],
-    "env": {
-      "OPENAI_API_KEY": "sk-your-key"
+  "mcpServers": {
+    "obsidian": {
+      "command": "node",
+      "args": ["/path/to/obsidian-extended-mcp/dist/index.js"],
+      "env": {
+        "OBSIDIAN_VAULT_PATH": "/path/to/vault",
+        "OPENAI_API_KEY": "sk-your-key"
+      }
     }
   }
 }
@@ -546,13 +557,15 @@ Vault check results:
 
 ```json
 {
-  "mcpServers": [
-    {
-      "name": "obsidian",
-      "command": "npx",
-      "args": ["obsidian-extended-mcp", "--path", "/path/to/vault"]
+  "mcpServers": {
+    "obsidian": {
+      "command": "node",
+      "args": ["/path/to/obsidian-extended-mcp/dist/index.js"],
+      "env": {
+        "OBSIDIAN_VAULT_PATH": "/path/to/vault"
+      }
     }
-  ]
+  }
 }
 ```
 
@@ -564,8 +577,8 @@ Vault check results:
 {
   "mcpServers": {
     "obsidian": {
-      "command": "npx",
-      "args": ["obsidian-extended-mcp"],
+      "command": "node",
+      "args": ["/path/to/obsidian-extended-mcp/dist/index.js"],
       "env": {
         "OBSIDIAN_VAULT_PATH": "/path/to/vault",
         "OPENAI_API_KEY": "sk-your-key"
@@ -578,13 +591,14 @@ Vault check results:
 ### 7.5. Ручной запуск (для отладки)
 
 ```bash
-# С .env в текущей директории
-npx obsidian-extended-mcp
+# С .env в текущей директории проекта
+cd /path/to/obsidian-extended-mcp
+node dist/index.js
 
-# С явными параметрами
+# С явными параметрами (из любой директории)
 OBSIDIAN_VAULT_PATH=/path/to/vault \
 OPENAI_API_KEY=sk-... \
-npx obsidian-extended-mcp
+node /path/to/obsidian-extended-mcp/dist/index.js
 ```
 
 ---

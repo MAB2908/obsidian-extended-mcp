@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { FileTypeRouter, markdownHandler, canvasHandler, jsonHandler } from '../src/shared/FileTypeRouter.js';
 import { promises as fs } from 'fs';

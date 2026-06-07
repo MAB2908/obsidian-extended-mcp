@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import type { VaultPool } from './VaultPool.js';
 import type { VaultEntry } from './VaultPool.js';
 import { VaultPathNotFoundError } from '../../shared/errors.js';

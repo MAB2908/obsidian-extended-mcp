@@ -1,4 +1,4 @@
-v0.1b: 
+v0.2b: 
 # Obsidian Extended MCP — Comprehensive Project Overview
 
 **Version:** 0.1b (beta)  
@@ -183,7 +183,7 @@ Obsidian Extended MCP does not try to replace Obsidian or become a black box. It
 
 ## 8. Status and Roadmap (Beta)
 
-**Current Status (v0.1b):**
+**Current Status (v0.2b):**
 - ✅ All 9 architectural layers implemented
 - ✅ 91 MCP tools
 - ✅ 293 tests passing
@@ -203,7 +203,7 @@ Obsidian Extended MCP does not try to replace Obsidian or become a black box. It
 ```bash
 npm install -g obsidian-extended-mcp
 obsidian-mcp init-meta --path ./my-vault
-npx obsidian-mcp
+node dist/index.js
 ```
 
 Connect to Claude Desktop, Kimi, Cline, or any MCP client — and your notes become context for AI.

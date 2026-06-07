@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// v0.1.0-beta.1:
-// v0.1.0-beta.1:
+// v0.2.0-beta.0:
+// v0.2.0-beta.0:
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -294,7 +294,7 @@ async function main() {
   }
 
   const server = new Server(
-    { name: 'obsidian-extended-mcp', version: '0.1.0-beta.1' },
+    { name: 'obsidian-extended-mcp', version: '0.2.0-beta.0' },
     { capabilities: { tools: {} } }
   );
 

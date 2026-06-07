@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import type { DreamTopic, PruneCandidate } from '../types.js';
 
 export interface PruneGeneratorOptions {

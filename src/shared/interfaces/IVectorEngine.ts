@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import type { SearchResult } from '../types.js';
 
 export interface IVectorEngine {

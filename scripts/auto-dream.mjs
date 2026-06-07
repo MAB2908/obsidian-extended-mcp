@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// v0.1b:
-// v0.1b:
+// v0.2b:
+// v0.2b:
 /**
  * Auto-Dreaming Standalone Runner — Cross-Platform
  * Законченный, автоматический, регулярный pipeline:

@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { DreamingEngine } from '../../src/layers/L9-dreaming/DreamingEngine.js';
 import { SessionLockService } from '../../src/layers/L9-dreaming/SessionLockService.js';

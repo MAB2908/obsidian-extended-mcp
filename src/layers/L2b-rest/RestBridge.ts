@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import type { ILayer2bRestBridge, Note } from '../../shared/types.js';
 import { RestQueryError } from '../../shared/errors.js';
 

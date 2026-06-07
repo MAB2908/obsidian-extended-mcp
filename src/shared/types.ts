@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 // Domain types for Obsidian Extended MCP
 
 export interface VaultConfig {

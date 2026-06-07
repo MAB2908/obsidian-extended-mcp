@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 export interface FolderRules {
   requiredTags: string[];
   forbiddenTags: string[];

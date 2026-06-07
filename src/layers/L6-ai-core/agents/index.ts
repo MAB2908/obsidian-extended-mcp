@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 export { AIAgent } from './base.js';
 export { IngestAgent, type IngestInput, type IngestOutput } from './IngestAgent.js';
 export { QueryAgent, type QueryInput, type QueryOutput } from './QueryAgent.js';

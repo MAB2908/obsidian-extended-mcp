@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { FileLock } from '../src/shared/FileLock.js';
 import { promises as fs } from 'fs';

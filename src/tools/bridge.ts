@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import type { ToolHandler } from '../shared/types.js';
 import type { VaultPool } from '../layers/L1-filesystem/VaultPool.js';
 import type { FolderACL } from '../security/FolderACL.js';

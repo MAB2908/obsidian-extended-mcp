@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 export interface OperationPolicy {
   readOnly: boolean;
   enableCommands: boolean;

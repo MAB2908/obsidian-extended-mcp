@@ -1,4 +1,4 @@
-v0.1b: 
+v0.2b: 
 ---
 title: "Meeting Notes"
 date: 2026-05-21

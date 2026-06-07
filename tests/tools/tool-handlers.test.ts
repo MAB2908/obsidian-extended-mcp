@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { describe, it, expect, vi } from 'vitest';
 import { createBridgeTools } from '../../src/tools/bridge.js';
 import { createSecurityTools } from '../../src/tools/security.js';

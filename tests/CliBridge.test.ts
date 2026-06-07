@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { CliBridge } from '../src/layers/L2-cli/CliBridge.js';
 import { CliError } from '../src/shared/errors.js';

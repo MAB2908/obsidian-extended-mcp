@@ -1,4 +1,4 @@
-v0.1b: 
+v0.2b: 
 ---
 title: "Deep Learning Book"
 date: 2026-05-10

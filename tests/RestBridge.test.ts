@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { describe, it, expect, vi } from 'vitest';
 import { RestBridge } from '../src/layers/L2b-rest/RestBridge.js';
 import { RestError } from '../src/shared/errors.js';

@@ -1,4 +1,4 @@
-v0.1b: 
+v0.2b: 
 ---
 title: "Andrej Karpathy"
 date: 2026-05-10

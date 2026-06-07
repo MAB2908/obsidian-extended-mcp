@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { promises as fs } from 'fs';
 import path from 'path';
 import { VaultManager } from '../../src/layers/L1-filesystem/VaultManager.js';

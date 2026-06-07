@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import type { IVaultManager } from '../../shared/interfaces/IVaultManager.js';
 import type { IGraphEngine } from '../../shared/interfaces/IGraphEngine.js';
 import type { IBM25Engine } from '../../shared/interfaces/IBM25Engine.js';

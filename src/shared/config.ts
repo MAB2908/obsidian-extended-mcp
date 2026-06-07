@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 /**
  * Centralized configuration for Obsidian Extended MCP.
  * Configuration hierarchy (highest → lowest priority):

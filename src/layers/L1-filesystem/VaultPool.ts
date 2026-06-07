@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import path from 'path';
 import { VaultManager } from './VaultManager.js';
 import { GraphEngine } from '../L4-semantic/GraphEngine.js';

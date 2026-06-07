@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import Database from 'better-sqlite3';
 import path from 'path';
 import { promises as fs, mkdirSync } from 'fs';

@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import { FolderACL } from './FolderACL.js';
 import { OperationGate, type OperationPolicy } from './OperationGate.js';
 import { AuditLogger } from './AuditLogger.js';

@@ -1,7 +1,7 @@
-v0.1b: 
+v0.2b: 
 # Быстрый старт — Obsidian Extended MCP (AI-first)
 
-> **Версия:** 0.1b  
+> **Версия:** 0.2b  
 > **Время:** 5 минут до первого запроса  
 > **Требования:** Node.js 22+, LLM API key или Ollama (локально)  
 > **Философия:** AI управляет всем циклом знаний — от сырых заметок до связанной базы знаний
@@ -14,9 +14,10 @@ v0.1b:
 npm install -g obsidian-extended-mcp
 ```
 
-Или через npx (без глобальной установки):
+Или локально из исходников:
 ```bash
-npx obsidian-extended-mcp --path /path/to/your/vault
+cd /path/to/obsidian-extended-mcp
+node dist/index.js
 ```
 
 ### 1.1. Настройка LLM (обязательно)
@@ -54,12 +55,13 @@ Wizard создаёт `.env` с дефолтными значениями:
 {
   "mcpServers": {
     "obsidian": {
-      "command": "npx",
+      "command": "node",
       "args": [
-        "obsidian-extended-mcp",
-        "--path",
-        "/Users/you/Documents/Obsidian Vault"
-      ]
+        "/path/to/obsidian-extended-mcp/dist/index.js"
+      ],
+      "env": {
+        "OBSIDIAN_VAULT_PATH": "/Users/you/Documents/Obsidian Vault"
+      }
     }
   }
 }
@@ -67,12 +69,17 @@ Wizard создаёт `.env` с дефолтными значениями:
 
 ### Kimi CLI
 
-`.kimi/mcp-config.json`:
+`~/.kimi/mcp.json`:
 ```json
 {
-  "obsidian": {
-    "command": "npx",
-    "args": ["obsidian-extended-mcp", "--path", "/path/to/vault"]
+  "mcpServers": {
+    "obsidian": {
+      "command": "node",
+      "args": ["/path/to/obsidian-extended-mcp/dist/index.js"],
+      "env": {
+        "OBSIDIAN_VAULT_PATH": "/path/to/vault"
+      }
+    }
   }
 }
 ```
@@ -82,13 +89,15 @@ Wizard создаёт `.env` с дефолтными значениями:
 `~/.cursor/mcp.json`:
 ```json
 {
-  "mcpServers": [
-    {
-      "name": "obsidian",
-      "command": "npx",
-      "args": ["obsidian-extended-mcp", "--path", "/path/to/vault"]
+  "mcpServers": {
+    "obsidian": {
+      "command": "node",
+      "args": ["/path/to/obsidian-extended-mcp/dist/index.js"],
+      "env": {
+        "OBSIDIAN_VAULT_PATH": "/path/to/vault"
+      }
     }
-  ]
+  }
 }
 ```
 

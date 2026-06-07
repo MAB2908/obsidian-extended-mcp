@@ -1,4 +1,4 @@
-// v0.1b:
+// v0.2b:
 import type { IBM25Engine } from '../../shared/interfaces/IBM25Engine.js';
 import type { SearchResult } from '../../shared/types.js';
 import { tokenize } from '../../shared/utils.js';
