@@ -44,6 +44,10 @@ export class VaultManager implements IVaultManager {
     this.cacheGeneration++;
   }
 
+  private async yieldEventLoop(): Promise<void> {
+    return new Promise((resolve) => setImmediate(resolve));
+  }
+
   private async resolve(rel: string): Promise<string> {
     const safe = await validatePath(this.vaultPath, rel);
     const full = path.resolve(path.join(this.vaultPath, safe));
@@ -262,7 +266,9 @@ export class VaultManager implements IVaultManager {
     let totalTags = 0;
     let totalLinks = 0;
 
-    for (const f of files) {
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      if (i % 50 === 0 && i > 0) await this.yieldEventLoop();
       let dir = path.dirname(f);
       while (dir !== '.') {
         folders.add(dir);
@@ -290,7 +296,9 @@ export class VaultManager implements IVaultManager {
     const startGen = this.cacheGeneration;
     const files = await this.collectMarkdownFiles('');
     const counts: Record<string, number> = {};
-    for (const f of files) {
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      if (i % 50 === 0 && i > 0) await this.yieldEventLoop();
       try {
         const note = await this.readNote(f, { includeContent: false });
         for (const tag of note.tags) {

@@ -1,0 +1,1 @@
+{"version":3,"file":"IBackgroundIndexer.d.ts","sourceRoot":"","sources":["../../../src/shared/interfaces/IBackgroundIndexer.ts"],"names":[],"mappings":"AACA,MAAM,WAAW,kBAAkB;IACjC,UAAU,IAAI,OAAO,CAAC,IAAI,CAAC,CAAC;IAC5B,SAAS,CAAC,IAAI,EAAE,MAAM,GAAG,IAAI,CAAC;IAC9B,YAAY,IAAI,IAAI,CAAC;IACrB,IAAI,IAAI,IAAI,CAAC;IACb,YAAY,IAAI,OAAO,CAAC,IAAI,CAAC,CAAC;CAC/B"}

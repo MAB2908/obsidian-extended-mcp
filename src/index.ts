@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// v0.2.0-beta.0:
-// v0.2.0-beta.0:
+// v0.2.0-beta.1:
+// v0.2.0-beta.1:
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -137,11 +137,11 @@ async function main() {
     if (embedProviderArg && !entry.vector) {
       entry.vector = new VectorEngine(embedProviderArg);
     }
-    if (!entry.indexer) {
+    if (semanticConfig.enabled && !entry.indexer) {
       entry.indexer = new BackgroundIndexer(entry.vault, entry.graph, entry.bm25, entry.vector, persistence, entry.semanticDb);
       await entry.indexer.initialize();
     }
-    if (adapter && !entry.pipeline) {
+    if (adapter && !entry.pipeline && entry.indexer) {
       entry.pipeline = new PipelineOrchestrator(entry.vault, entry.graph, entry.bm25, entry.indexer, adapter);
     }
   }
@@ -294,7 +294,7 @@ async function main() {
   }
 
   const server = new Server(
-    { name: 'obsidian-extended-mcp', version: '0.2.0-beta.0' },
+    { name: 'obsidian-extended-mcp', version: '0.2.0-beta.1' },
     { capabilities: { tools: {} } }
   );
 

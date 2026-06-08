@@ -1,0 +1,1 @@
+{"version":3,"file":"dev-system.d.ts","sourceRoot":"","sources":["../../src/tools/dev-system.ts"],"names":[],"mappings":"AACA,OAAO,KAAK,EAAE,WAAW,EAAE,MAAM,oBAAoB,CAAC;AACtD,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,kCAAkC,CAAC;AAExE,wBAAgB,oBAAoB,CAAC,SAAS,EAAE,eAAe,GAAG,WAAW,EAAE,CAoT9E"}

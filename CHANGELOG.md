@@ -1,6 +1,14 @@
 v0.2b: 
 # Changelog
 
+## v0.2.0-beta.1 (2026-06-08)
+
+### 🔴 Critical Fixes (Large Vault Support)
+- **BackgroundIndexer event loop blocking**: Added `yieldEventLoop()` every 50 iterations in `runBatchInternal()` to prevent blocking the Node.js event loop during full-vault indexing (12,000+ notes)
+- **VaultManager event loop blocking**: Added `yieldEventLoop()` every 50 iterations in `getVaultStats()` and `listAllTags()` — these tools now respond without timeouts on large vaults
+- **BackgroundIndexer unconditional startup**: Fixed `index.ts` to skip `BackgroundIndexer` creation when `SEMANTIC_ENABLED=false`, eliminating unnecessary disk contention at startup
+- **Performance**: `getVaultStats()` time reduced from ~8s to ~4.5s (no background indexer competition)
+
 ## v0.2b (2026-06-07)
 
 ### 🔴 Fixes

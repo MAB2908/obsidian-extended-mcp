@@ -1,6 +1,6 @@
 # v0.1b:
 node_modules/
-dist/
+# dist/  — included for GitHub installs without build step
 *.log
 .env
 .vscode/

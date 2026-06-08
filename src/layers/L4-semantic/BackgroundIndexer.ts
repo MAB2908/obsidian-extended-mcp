@@ -95,6 +95,10 @@ export class BackgroundIndexer implements IBackgroundIndexer {
     }
   }
 
+  private async yieldEventLoop(): Promise<void> {
+    return new Promise((resolve) => setImmediate(resolve));
+  }
+
   private async runBatchInternal(): Promise<void> {
     const toProcess = this.dirtyFiles;
     this.dirtyFiles = new Set();
@@ -109,7 +113,9 @@ export class BackgroundIndexer implements IBackgroundIndexer {
 
     // Build wikilink resolution map: basename/alias -> full path
     const linkMap = new Map<string, string>();
-    for (const relPath of files) {
+    for (let i = 0; i < files.length; i++) {
+      const relPath = files[i];
+      if (i % 50 === 0) await this.yieldEventLoop();
       try {
         const note = await this.vault.readNote(relPath, { includeFrontmatter: false, includeContent: false });
         const base = relPath.replace(/\.md$/, '');
@@ -139,7 +145,9 @@ export class BackgroundIndexer implements IBackgroundIndexer {
     const vectorDocs: Array<{ id: string; text: string }> = [];
     const chunkVectorDocs: Array<{ id: string; text: string; chunkId: number }> = [];
 
-    for (const relPath of files) {
+    for (let i = 0; i < files.length; i++) {
+      const relPath = files[i];
+      if (i % 50 === 0) await this.yieldEventLoop();
       try {
         const note = await this.vault.readNote(relPath, { includeFrontmatter: true, includeContent: true });
         // Resolve outbound links to actual paths
@@ -178,7 +186,9 @@ export class BackgroundIndexer implements IBackgroundIndexer {
     }
 
     // Phase 2: Atomically update all in-memory indexes (synchronous, no interleaving)
-    for (const data of noteData) {
+    for (let i = 0; i < noteData.length; i++) {
+      const data = noteData[i];
+      if (i % 50 === 0) await this.yieldEventLoop();
       this.bm25.addDoc(data.relPath, `${data.title} ${data.content}`);
       this.graph.addNode({
         path: data.relPath,

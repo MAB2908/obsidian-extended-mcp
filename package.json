@@ -1,6 +1,6 @@
 {
   "name": "obsidian-extended-mcp",
-  "version": "0.2.0-beta.0",
+  "version": "0.2.0-beta.1",
   "description": "AI-first Knowledge Base Server integrating Obsidian with MCP clients",
   "type": "module",
   "main": "dist/index.js",
@@ -22,8 +22,16 @@
     "knowledge-base",
     "typescript"
   ],
-  "author": "",
+  "author": "MAB2908",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MAB2908/obsidian-extended-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MAB2908/obsidian-extended-mcp/issues"
+  },
+  "homepage": "https://github.com/MAB2908/obsidian-extended-mcp#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "better-sqlite3": "^12.10.0",

@@ -112,18 +112,52 @@ export class PipelineOrchestrator implements IPipelineOrchestrator {
       const graphSnapshot = JSON.stringify(this.graph.getGraph().nodes, null, 0);
       const ontology = await this.vault.listAllTags();
 
-      const result = await this.compileAgent.execute({
-        sources,
-        existingConcepts: concepts.map((c) => c.title),
-        graphSnapshot,
-        ontology: Object.keys(ontology),
-      });
+      // Batch compilation to avoid blocking the event loop and exceeding LLM context limits
+      const BATCH_SIZE = 20;
+      const allNewConcepts: Array<{ file: string; title: string; content: string; links: string[]; domain: string }> = [];
+      const allUpdatedConcepts: Array<{ file: string; appendTo: string; content: string }> = [];
+      const allUpdatedMocs: Array<{ file: string; appendTo: string; content: string }> = [];
+      const allOrphanedSources: string[] = [];
+
+      if (sources.length === 0) {
+        return { data: { newConcepts: [], updatedConcepts: [], updatedMocs: [], orphanedSources: [] } };
+      }
+
+      const totalBatches = Math.ceil(sources.length / BATCH_SIZE);
+      for (let i = 0; i < sources.length; i += BATCH_SIZE) {
+        const batch = sources.slice(i, i + BATCH_SIZE);
+        console.error(`[PipelineOrchestrator] Compile batch ${Math.floor(i / BATCH_SIZE) + 1}/${totalBatches} (${batch.length} sources)`);
+
+        const result = await this.compileAgent.execute({
+          sources: batch,
+          existingConcepts: concepts.map((c) => c.title),
+          graphSnapshot,
+          ontology: Object.keys(ontology),
+        });
+
+        allNewConcepts.push(...result.data.newConcepts);
+        allUpdatedConcepts.push(...result.data.updatedConcepts);
+        allUpdatedMocs.push(...result.data.updatedMocs);
+        allOrphanedSources.push(...result.data.orphanedSources);
+
+        // Yield to event loop so other requests can be processed
+        await new Promise((r) => setTimeout(r, 0));
+      }
+
+      const aggregatedResult = {
+        data: {
+          newConcepts: allNewConcepts,
+          updatedConcepts: allUpdatedConcepts,
+          updatedMocs: allUpdatedMocs,
+          orphanedSources: allOrphanedSources,
+        },
+      };
 
       // Write new concepts with transaction rollback (C3)
       const writtenConcepts: string[] = [];
       const backups: Array<{ path: string; content?: string; frontmatter?: Record<string, unknown> }> = [];
       try {
-        for (const c of result.data.newConcepts) {
+        for (const c of aggregatedResult.data.newConcepts) {
           // Backup existing content before overwrite (HIGH-007)
           try {
             const existing = await this.vault.readNote(c.file, { includeContent: true });
@@ -161,7 +195,7 @@ export class PipelineOrchestrator implements IPipelineOrchestrator {
       }
 
       // Update existing concepts
-      for (const u of result.data.updatedConcepts) {
+      for (const u of aggregatedResult.data.updatedConcepts) {
         try {
           const note = await this.vault.readNote(u.file);
           let section: string;
@@ -180,7 +214,7 @@ export class PipelineOrchestrator implements IPipelineOrchestrator {
         }
       }
 
-      return result;
+      return aggregatedResult;
     }, { itemsIn: sinceDays, itemsOut: 0 });
   }
 
