@@ -185,6 +185,7 @@ export class BackgroundIndexer {
                     isOrphan: data.resolvedOutbound.length === 0,
                     isDeadend: false,
                     hasUnresolvedLinks: data.outboundLinks.some((t) => !linkMap.has(t) && !linkMap.has(t.split('/').pop() || t)),
+                    unresolvedLinks: data.outboundLinks.filter((t) => !linkMap.has(t) && !linkMap.has(t.split('/').pop() || t)),
                 });
                 for (const target of data.resolvedOutbound) {
                     this.graph.addEdge(data.relPath, target, 'wikilink');

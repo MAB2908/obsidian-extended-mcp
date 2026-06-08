@@ -110,7 +110,7 @@ async function main() {
         if (embedProviderArg && !entry.vector) {
             entry.vector = new VectorEngine(embedProviderArg);
         }
-        if (semanticConfig.enabled && !entry.indexer) {
+        if (!entry.indexer) {
             entry.indexer = new BackgroundIndexer(entry.vault, entry.graph, entry.bm25, entry.vector, persistence, entry.semanticDb);
             await entry.indexer.initialize();
         }

@@ -17,6 +17,7 @@ export declare class VaultManager implements IVaultManager {
     private resolve;
     /** Public accessor for resolving vault-relative paths (used by index.ts file router) */
     resolvePath(rel: string): Promise<string>;
+    readRawContent(relPath: string): Promise<string>;
     readNote(relPath: string, opts?: ReadNoteOptions): Promise<Note>;
     private checkSize;
     writeNote(relPath: string, content: string, opts?: WriteNoteOptions): Promise<void>;

@@ -14,8 +14,14 @@ export class CliBridge {
             this.cliPath = cliPath;
     }
     async isAvailable() {
-        if (this.cliPath)
+        if (this.cliPath) {
+            // Windows GUI applications (like Obsidian.exe) cannot produce stdout
+            // when spawned via child_process, making them unsuitable as CLI bridges.
+            if (process.platform === 'win32' && /obsidian\.exe$/i.test(this.cliPath)) {
+                return false;
+            }
             return true;
+        }
         try {
             const cmd = process.platform === 'win32' ? 'where obsidian' : 'which obsidian';
             const { stdout } = await execAsync(cmd);
@@ -34,7 +40,8 @@ export class CliBridge {
         if (!this.cliPath && !(await this.isAvailable())) {
             throw new CliNotFoundError();
         }
-        return this.runCli(['eval', code], timeout);
+        const wrapped = `(async () => { try { const __result = await (async () => { ${code} })(); if (__result !== undefined) { console.log(typeof __result === 'string' ? __result : JSON.stringify(__result)); } } catch (e) { console.error(JSON.stringify({error: String(e.message || e)})); } })()`;
+        return this.runCli(['eval', `code=${wrapped}`], timeout);
     }
     async backlinks(path) {
         const result = await this.eval(`
@@ -48,7 +55,7 @@ export class CliBridge {
           out.push({ source, line: item.position?.start?.line ?? 0, context: item.displayText || '' });
         }
       }
-      JSON.stringify(out);
+      return JSON.stringify(out);
     `);
         return this.parseJson(result);
     }
@@ -65,7 +72,7 @@ export class CliBridge {
         const backCount = Object.keys(back).length;
         if (links === 0 && embeds === 0 && backCount === 0) orphans.push(f.path);
       }
-      JSON.stringify(orphans);
+      return JSON.stringify(orphans);
     `);
         return this.parseJson(result);
     }
@@ -82,7 +89,7 @@ export class CliBridge {
           }
         }
       }
-      JSON.stringify(out);
+      return JSON.stringify(out);
     `);
         return this.parseJson(result);
     }
@@ -98,7 +105,7 @@ export class CliBridge {
         const hasIn = Object.keys(back).length > 0;
         if (hasOut && !hasIn) dead.push(f.path);
       }
-      JSON.stringify(dead);
+      return JSON.stringify(dead);
     `);
         return this.parseJson(result);
     }
@@ -106,23 +113,23 @@ export class CliBridge {
         let code;
         switch (action) {
             case 'read':
-                code = `JSON.stringify(app.metadataCache.getFileCache(app.vault.getAbstractFileByPath(${JSON.stringify(file)}))?.frontmatter || {})`;
+                code = `return JSON.stringify(app.metadataCache.getFileCache(app.vault.getAbstractFileByPath(${JSON.stringify(file)}))?.frontmatter || {})`;
                 break;
             case 'list':
-                code = `JSON.stringify(Object.keys(app.metadataCache.getFileCache(app.vault.getAbstractFileByPath(${JSON.stringify(file)}))?.frontmatter || {}))`;
+                code = `return JSON.stringify(Object.keys(app.metadataCache.getFileCache(app.vault.getAbstractFileByPath(${JSON.stringify(file)}))?.frontmatter || {}))`;
                 break;
             case 'set':
                 code = `
           const f = app.vault.getAbstractFileByPath(${JSON.stringify(file)});
           app.fileManager.processFrontMatter(f, (fm) => { fm[${JSON.stringify(property)}] = ${JSON.stringify(value)}; });
-          JSON.stringify({ok: true})
+          return JSON.stringify({ok: true})
         `;
                 break;
             case 'remove':
                 code = `
           const f = app.vault.getAbstractFileByPath(${JSON.stringify(file)});
           app.fileManager.processFrontMatter(f, (fm) => { delete fm[${JSON.stringify(property)}]; });
-          JSON.stringify({ok: true})
+          return JSON.stringify({ok: true})
         `;
                 break;
             default:
@@ -145,7 +152,7 @@ export class CliBridge {
           out.push({ path: f.path, snippet: content.slice(Math.max(0, idx - 60), idx + 120) });
         }
       }
-      JSON.stringify(out);
+      return JSON.stringify(out);
     `);
         const raw = this.parseJson(result);
         return raw.map((r) => ({ path: r.path, score: 1, snippet: r.snippet, highlights: [query] }));
@@ -157,12 +164,12 @@ export class CliBridge {
       if (!file) return JSON.stringify({error: 'Daily note not configured'});
       if (${JSON.stringify(action)} === 'read') {
         const text = await app.vault.cachedRead(file);
-        JSON.stringify({content: text});
+        return JSON.stringify({content: text});
       } else {
         const existing = await app.vault.cachedRead(file);
         const updated = ${JSON.stringify(action)} === 'prepend' ? (${JSON.stringify(content || '')} + '\\n' + existing) : (existing + '\\n' + ${JSON.stringify(content || '')});
         await app.vault.modify(file, updated);
-        JSON.stringify({ok: true});
+        return JSON.stringify({ok: true});
       }
     `);
         const parsed = this.parseJson(result);
@@ -177,13 +184,13 @@ export class CliBridge {
         let code;
         switch (action) {
             case 'enable':
-                code = `JSON.stringify({ok: app.plugins.enablePlugin(${JSON.stringify(id)})})`;
+                code = `return JSON.stringify({ok: app.plugins.enablePlugin(${JSON.stringify(id)})})`;
                 break;
             case 'disable':
-                code = `app.plugins.disablePlugin(${JSON.stringify(id)}); JSON.stringify({ok: true})`;
+                code = `app.plugins.disablePlugin(${JSON.stringify(id)}); return JSON.stringify({ok: true})`;
                 break;
             case 'list':
-                code = `JSON.stringify(Object.values(app.plugins.plugins).map(p => ({id: p.manifest.id, name: p.manifest.name, enabled: p._loaded})))`;
+                code = `return JSON.stringify(Object.values(app.plugins.plugins).map(p => ({id: p.manifest.id, name: p.manifest.name, enabled: p._loaded})))`;
                 break;
             default:
                 throw new UnknownCliActionError(action, 'plugin');

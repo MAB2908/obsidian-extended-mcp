@@ -114,12 +114,17 @@ export class GraphEngine {
         const deadends = [];
         for (const [path, node] of this.nodes) {
             nodes[path] = node;
-            if (node.inbound.length === 0)
+            const inbound = node.inbound || [];
+            const outbound = node.outbound || [];
+            if (inbound.length === 0)
                 orphans.push(path);
-            if (node.outbound.length === 0)
+            if (outbound.length === 0)
                 deadends.push(path);
-            for (const target of node.outbound) {
+            for (const target of outbound) {
                 edges.push({ from: path, to: target, type: 'wikilink' });
+            }
+            for (const target of node.unresolvedLinks || []) {
+                unresolved.push({ source: path, link: target, line: 0 });
             }
         }
         return { nodes, edges, unresolved, orphans, deadends };
@@ -281,6 +286,7 @@ export class GraphEngine {
                 isOrphan: true,
                 isDeadend: false,
                 hasUnresolvedLinks: false,
+                unresolvedLinks: [],
             });
         }
     }

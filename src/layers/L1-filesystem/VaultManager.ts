@@ -64,13 +64,21 @@ export class VaultManager implements IVaultManager {
     return this.resolve(rel);
   }
 
-  async readNote(relPath: string, opts?: ReadNoteOptions): Promise<Note> {
+  async readRawContent(relPath: string): Promise<string> {
     const full = await this.resolve(relPath);
-    const raw = await this.readFileSafe(full);
+    return this.readFileSafe(full);
+  }
+
+  async readNote(relPath: string, opts?: ReadNoteOptions): Promise<Note> {
+    const raw = await this.readRawContent(relPath);
     const parsed = matter(raw);
     const content = parsed.content;
     const title = (parsed.data.title as string) || path.basename(relPath, '.md');
-    const tags: string[] = Array.isArray(parsed.data.tags) ? parsed.data.tags.map(String) : [];
+    const tags: string[] = Array.isArray(parsed.data.tags)
+      ? parsed.data.tags
+          .map((t: unknown) => (typeof t === 'string' ? t : t && typeof t === 'object' && 'name' in t ? String((t as { name: unknown }).name) : ''))
+          .filter((t): t is string => t !== '')
+      : [];
     const outboundLinks = this.extractWikilinks(content);
 
     return {
@@ -133,7 +141,17 @@ export class VaultManager implements IVaultManager {
       const tmpPath = `${full}.tmp.${randomBytes(4).toString('hex')}`;
       try {
         await fs.writeFile(tmpPath, combined, { flag: 'wx' });
-        await fs.rename(tmpPath, full);
+        try {
+          await fs.rename(tmpPath, full);
+        } catch (renameErr: unknown) {
+          const rCode = renameErr && typeof renameErr === 'object' && 'code' in renameErr ? (renameErr as { code: string }).code : '';
+          if (rCode === 'EPERM' || rCode === 'EBUSY') {
+            await fs.copyFile(tmpPath, full);
+            await fs.unlink(tmpPath).catch(() => {});
+          } else {
+            throw renameErr;
+          }
+        }
       } catch (e) {
         try { await fs.unlink(tmpPath); } catch { /* ignore */ }
         throw e;
@@ -236,10 +254,12 @@ export class VaultManager implements IVaultManager {
     const qTokens = tokenize(query);
     const results: SearchResult[] = [];
 
-    for (const relPath of all) {
+    for (let i = 0; i < all.length; i++) {
+      if (i % 50 === 0 && i > 0) await this.yieldEventLoop();
+      const relPath = all[i];
       try {
-        const note = await this.readNote(relPath, { includeFrontmatter: false });
-        const text = note.content.toLowerCase();
+        const raw = await this.readRawContent(relPath);
+        const text = raw.toLowerCase();
         let matches = 0;
         for (const t of qTokens) {
           if (text.includes(t)) matches++;
@@ -247,7 +267,7 @@ export class VaultManager implements IVaultManager {
         if (matches === 0) continue;
         const score = matches / qTokens.length;
         const idx = text.indexOf(qTokens[0]);
-        const snippet = note.content.slice(Math.max(0, idx - 60), idx + 120);
+        const snippet = raw.slice(Math.max(0, idx - 60), idx + 120);
         results.push({ path: relPath, score, snippet, highlights: qTokens });
       } catch {
         // ignore unreadable
@@ -371,7 +391,17 @@ export class VaultManager implements IVaultManager {
               await fs.unlink(tmpPath).catch(() => {});
             }
           } else {
-            await fs.rename(tmpPath, fullPath);
+            try {
+              await fs.rename(tmpPath, fullPath);
+            } catch (renameErr: unknown) {
+              const rCode = renameErr && typeof renameErr === 'object' && 'code' in renameErr ? (renameErr as { code: string }).code : '';
+              if (rCode === 'EPERM' || rCode === 'EBUSY') {
+                await fs.copyFile(tmpPath, fullPath);
+                await fs.unlink(tmpPath).catch(() => {});
+              } else {
+                throw renameErr;
+              }
+            }
           }
           if (backupPath) {
             await this.pruneBackups(fsConfig.maxBackups);
@@ -446,6 +476,7 @@ export class VaultManager implements IVaultManager {
       const entries = await fs.readdir(currentDir, { withFileTypes: true });
       for (const e of entries) {
         const full = path.join(currentDir, e.name);
+        if (e.isSymbolicLink()) continue;
         if (e.isDirectory()) {
           await walk(full, prefix ? `${prefix}/${e.name}` : e.name);
         } else if (e.name.endsWith('.md')) {
@@ -511,7 +542,7 @@ export class VaultManager implements IVaultManager {
     const walk = async (dir: string, prefix: string) => {
       const entries = await fs.readdir(dir, { withFileTypes: true });
       for (const e of entries) {
-        if (e.name.startsWith('.')) continue;
+        if (e.name.startsWith('.') || e.isSymbolicLink()) continue;
         const rel = prefix ? `${prefix}/${e.name}` : e.name;
         if (e.isDirectory()) {
           await walk(path.join(dir, e.name), rel);

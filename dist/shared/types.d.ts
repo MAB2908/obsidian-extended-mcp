@@ -84,6 +84,7 @@ export interface GraphNode {
     isOrphan: boolean;
     isDeadend: boolean;
     hasUnresolvedLinks: boolean;
+    unresolvedLinks?: string[];
 }
 export interface GraphEdge {
     from: string;
