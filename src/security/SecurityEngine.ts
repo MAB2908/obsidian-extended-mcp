@@ -188,7 +188,7 @@ export class SecurityEngine {
 
   private isReadOp(toolName: string): boolean {
     // Exact read tools
-    const readTools = ['read_note', 'read_file', 'list_directory', 'search_notes', 'get_vault_stats', 'list_all_tags', 'get_vault_rules', 'validate_note', 'graph_neighbors', 'graph_analyze_centrality', 'graph_detect_communities', 'bm25_search', 'semantic_search', 'semantic_search_db', 'db_stats', 'audit_log', 'list_backups', 'cli_backlinks', 'cli_orphans', 'cli_deadends', 'cli_unresolved', 'cli_search', 'ai_query', 'rest_active_note', 'rest_dataview', 'get_context_bootstrap', 'pool_list_vaults', 'fs_list_notes', 'fs_get_graph', 'fs_graph_find_path', 'semantic_rag', 'dream_scan', 'auto_dream_status'];
+    const readTools = ['read_note', 'read_file', 'list_directory', 'search_notes', 'get_vault_stats', 'list_all_tags', 'get_vault_rules', 'validate_note', 'graph_neighbors', 'graph_analyze_centrality', 'graph_detect_communities', 'bm25_search', 'semantic_search', 'semantic_search_db', 'db_stats', 'audit_log', 'list_backups', 'cli_backlinks', 'cli_orphans', 'cli_deadends', 'cli_unresolved', 'cli_search', 'cli_properties', 'cli_daily', 'ai_query', 'rest_active_note', 'rest_dataview', 'get_context_bootstrap', 'pool_list_vaults', 'fs_list_notes', 'fs_get_graph', 'fs_graph_find_path', 'semantic_rag', 'dream_scan', 'auto_dream_status'];
     if (readTools.includes(toolName)) return true;
     if (toolName.startsWith('read_') || toolName.startsWith('search_') || toolName.startsWith('list_') || toolName.startsWith('get_')) return true;
     // Dev system read operations

@@ -43,6 +43,8 @@ export class FileTypeRouter {
 
   async read(filePath: string): Promise<unknown> {
     await this.guard(filePath);
+    // Yield event loop before potentially large file reads to prevent MCP transport starvation.
+    await new Promise((resolve) => setImmediate(resolve));
     const ext = path.extname(filePath).toLowerCase();
     const mime = this.detectMime(filePath);
     for (const handler of this.handlers) {

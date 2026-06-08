@@ -258,8 +258,7 @@ export class DevSystemEngine {
     // ─── CLAUDE.md Management ───
     async getClaudeMd() {
         try {
-            const note = await this.vault.readNote(this.config.claudeMdPath, { includeContent: true });
-            return note.content;
+            return await this.vault.readRawContent(this.config.claudeMdPath);
         }
         catch (err) {
             console.error('[DevSystemEngine] Failed to read CLAUDE.md:', err);

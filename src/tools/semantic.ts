@@ -142,12 +142,17 @@ export function createSemanticTools(resolveVault: (args: Record<string, unknown>
       handler: async (args) => {
         const { query, top_k } = args as { query: string; top_k?: number };
         const ctx = resolveVault(args as Record<string, unknown>);
+        let docs;
+        let warning: string | undefined;
         if (!ctx.vector) {
-          return { content: [{ type: 'text', text: 'Vector engine not enabled.' }], isError: true };
+          warning = 'Vector engine not enabled. Falling back to BM25 keyword search. To enable semantic RAG, set SEMANTIC_ENABLED=true and provide OPENAI_API_KEY or OLLAMA_BASE_URL.';
+          docs = ctx.bm25.search(query, top_k ?? semanticConfig.semanticRagTopK);
+        } else {
+          docs = await ctx.vector.search(query, top_k ?? 5);
         }
-        const docs = await ctx.vector.search(query, top_k ?? 5);
         const chunks = docs.map((d) => ({ path: d.path, score: d.score, snippet: d.snippet?.slice(0, 500) }));
-        return { content: [{ type: 'text', text: JSON.stringify(chunks, null, 2) }] };
+        const payload = warning ? { warning, chunks } : chunks;
+        return { content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }] };
       },
     },
 
