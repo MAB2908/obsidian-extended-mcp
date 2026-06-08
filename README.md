@@ -1,6 +1,8 @@
-# Obsidian Extended MCP v0.2b
+# Obsidian Extended MCP v0.2.0-beta.1
 
 AI-first Knowledge Base Server integrating Obsidian with MCP clients.
+
+> **v0.2.0-beta.1** — Fixed event-loop blocking on large vaults (12,000+ notes). BackgroundIndexer and VaultManager now yield to the event loop every 50 iterations, eliminating MCP timeouts. Background indexing is skipped when `SEMANTIC_ENABLED=false`.
 
 ## Features
 

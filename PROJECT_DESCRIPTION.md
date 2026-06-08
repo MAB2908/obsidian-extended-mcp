@@ -1,7 +1,6 @@
-v0.2b: 
 # Obsidian Extended MCP — Comprehensive Project Overview
 
-**Version:** 0.1b (beta)  
+**Version:** 0.2.0-beta.1  
 **Repository:** https://github.com/MAB2908/obsidian-extended-mcp
 
 ---
@@ -10,7 +9,9 @@ v0.2b:
 
 **Obsidian Extended MCP** is a server-side bridge (MCP Server) that transforms your Obsidian knowledge base (vault) into a fully-fledged data store for AI agents. Unlike plugins that run inside Obsidian, this project is a **standalone Node.js server** connectable to any MCP-compatible client (Claude Desktop, Kimi, Cline, Continue, and others) via the standard MCP protocol.
 
-The project solves a fundamental problem: most AI assistants cannot work with local notes, knowledge graphs, or the semantic context of the user. Obsidian Extended MCP gives AI **91 tools** for reading, writing, searching, analyzing, and transforming notes — with full access control, auditing, and security.
+The project solves a fundamental problem: most AI assistants cannot work with local notes, knowledge graphs, or the semantic context of the user. Obsidian Extended MCP gives AI **89 tools** for reading, writing, searching, analyzing, and transforming notes — with full access control, auditing, and security.
+
+> **v0.2.0-beta.1 Performance Update:** Fixed event-loop blocking on large vaults (12,000+ notes). `BackgroundIndexer` and `VaultManager` now yield to the event loop every 50 iterations. Background indexing is skipped when `SEMANTIC_ENABLED=false`, eliminating startup delays and MCP request timeouts.
 
 ---
 
