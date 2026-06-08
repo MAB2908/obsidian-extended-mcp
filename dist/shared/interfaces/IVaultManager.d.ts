@@ -3,6 +3,7 @@ import type { ValidationResult } from '../TagEngine.js';
 export interface IVaultManager {
     readonly root: string;
     readNote(relPath: string, opts?: ReadNoteOptions): Promise<Note>;
+    readNoteTags(relPath: string): Promise<string[]>;
     readRawContent(relPath: string): Promise<string>;
     writeNote(relPath: string, content: string, opts?: WriteNoteOptions): Promise<void>;
     appendNote(relPath: string, content: string): Promise<void>;

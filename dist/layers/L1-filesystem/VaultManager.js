@@ -57,11 +57,7 @@ export class VaultManager {
         const parsed = matter(raw);
         const content = parsed.content;
         const title = parsed.data.title || path.basename(relPath, '.md');
-        const tags = Array.isArray(parsed.data.tags)
-            ? parsed.data.tags
-                .map((t) => (typeof t === 'string' ? t : t && typeof t === 'object' && 'name' in t ? String(t.name) : ''))
-                .filter((t) => t !== '')
-            : [];
+        const tags = this.normalizeTags(parsed.data.tags);
         const outboundLinks = this.extractWikilinks(content);
         return {
             path: relPath,
@@ -74,6 +70,47 @@ export class VaultManager {
             created: parsed.data.created ? new Date(parsed.data.created) : undefined,
             modified: parsed.data.modified ? new Date(parsed.data.modified) : undefined,
         };
+    }
+    async readNoteTags(relPath) {
+        const full = await this.resolve(relPath);
+        let raw = '';
+        try {
+            const fd = await fs.open(full, 'r');
+            try {
+                const buf = Buffer.alloc(16384);
+                const { bytesRead } = await fd.read(buf, 0, 16384, 0);
+                raw = buf.toString('utf-8', 0, bytesRead);
+            }
+            finally {
+                await fd.close();
+            }
+        }
+        catch {
+            // Fallback to readFileSafe error handling on failure
+            raw = await this.readFileSafe(full);
+        }
+        // Fast path: if frontmatter is fully contained in the 16KB buffer, parse only that.
+        if (raw.startsWith('---')) {
+            const close = raw.indexOf('---', 3);
+            if (close !== -1) {
+                const parsed = matter(raw.slice(0, close + 3));
+                return this.normalizeTags(parsed.data.tags);
+            }
+        }
+        // Fallback for files without frontmatter or with very long frontmatter.
+        const parsed = matter(raw.length < 16384 ? raw : await this.readFileSafe(full));
+        return this.normalizeTags(parsed.data.tags);
+    }
+    normalizeTags(tags) {
+        return Array.isArray(tags)
+            ? tags
+                .map((t) => typeof t === 'string'
+                ? t
+                : t && typeof t === 'object' && 'name' in t
+                    ? String(t.name)
+                    : '')
+                .filter((t) => t !== '')
+            : [];
     }
     checkSize(content) {
         const size = Buffer.byteLength(content, 'utf-8');

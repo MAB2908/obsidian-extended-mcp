@@ -595,13 +595,16 @@ export class DevSystemEngine {
         try {
             const entries = await this.vault.listDirectory(folder);
             const results = [];
-            for (const e of entries) {
+            for (let i = 0; i < entries.length; i++) {
+                const e = entries[i];
                 if (e.name.endsWith('.md')) {
                     const id = e.name.replace(/\.md$/, '');
                     const item = await reader(id);
                     if (item)
                         results.push(item);
                 }
+                if (i % 50 === 49)
+                    await new Promise((resolve) => setImmediate(resolve));
             }
             return results;
         }

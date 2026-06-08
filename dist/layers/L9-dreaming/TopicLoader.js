@@ -9,6 +9,10 @@ async function batchMap(items, batchSize, fn) {
         const batch = items.slice(i, i + batchSize);
         const batchResults = await Promise.all(batch.map(fn));
         results.push(...batchResults);
+        // Yield event loop every 10 batches to prevent MCP timeouts on large vaults
+        if (i > 0 && i % (batchSize * 10) === 0) {
+            await new Promise((resolve) => setImmediate(resolve));
+        }
     }
     return results;
 }

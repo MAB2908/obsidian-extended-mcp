@@ -263,10 +263,16 @@ export function createFilesystemTools(resolveVault, fileRouter) {
                 let files = await ctx.vault.listNotes(folder ?? '');
                 if (tag) {
                     const tagged = [];
-                    for (const f of files) {
-                        const note = await ctx.vault.readNote(f, { includeContent: false });
-                        if (note.tags.includes(tag))
-                            tagged.push(f);
+                    const batchSize = 100;
+                    for (let i = 0; i < files.length; i += batchSize) {
+                        const batch = files.slice(i, i + batchSize);
+                        const tagsBatch = await Promise.all(batch.map((f) => ctx.vault.readNoteTags(f)));
+                        for (let j = 0; j < batch.length; j++) {
+                            if (tagsBatch[j].includes(tag))
+                                tagged.push(batch[j]);
+                        }
+                        // Yield event loop to prevent MCP transport starvation on large vaults.
+                        await new Promise((resolve) => setImmediate(resolve));
                     }
                     files = tagged;
                 }

@@ -149,7 +149,7 @@ export const semanticConfig = {
     /** Background indexer debounce milliseconds */
     indexerDebounceMs: envNumber('INDEXER_DEBOUNCE_MS', yamlVal('semantic', 'indexerDebounceMs') ?? 2000),
     /** TopicLoader batch size for dreaming layer */
-    topicLoaderBatchSize: envNumber('TOPIC_LOADER_BATCH_SIZE', yamlVal('semantic', 'topicLoaderBatchSize') ?? 10),
+    topicLoaderBatchSize: envNumber('TOPIC_LOADER_BATCH_SIZE', yamlVal('semantic', 'topicLoaderBatchSize') ?? 50),
     /** Semantic search default limit */
     semanticSearchLimit: envNumber('SEMANTIC_SEARCH_LIMIT', yamlVal('semantic', 'semanticSearchLimit') ?? 20),
     /** Semantic RAG default top_k */

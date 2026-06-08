@@ -19,6 +19,8 @@ export declare class VaultManager implements IVaultManager {
     resolvePath(rel: string): Promise<string>;
     readRawContent(relPath: string): Promise<string>;
     readNote(relPath: string, opts?: ReadNoteOptions): Promise<Note>;
+    readNoteTags(relPath: string): Promise<string[]>;
+    private normalizeTags;
     private checkSize;
     writeNote(relPath: string, content: string, opts?: WriteNoteOptions): Promise<void>;
     appendNote(relPath: string, content: string): Promise<void>;
