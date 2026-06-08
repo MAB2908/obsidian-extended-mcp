@@ -63,6 +63,9 @@ export function createSecurityTools(resolveVault, audit, security) {
                     return { content: [{ type: 'text', text: 'batch_edit is disabled. Set ENABLE_BATCH_EDIT=true to enable.' }], isError: true };
                 }
                 const { filter, operation, target, replacement, preview } = args;
+                if (!filter || typeof filter !== 'object') {
+                    return { content: [{ type: 'text', text: 'batch_edit requires a filter object with folder, glob, or tag properties.' }], isError: true };
+                }
                 const ctx = resolveVault(args);
                 const auth = security.authorize('batch_edit', args);
                 if (!auth.allowed) {

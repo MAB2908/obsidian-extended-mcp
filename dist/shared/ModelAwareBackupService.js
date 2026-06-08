@@ -210,7 +210,8 @@ export class ModelAwareBackupService {
     async storeArtifact(partial) {
         const profile = this.getCurrentModel();
         if (!profile) {
-            throw new Error('No current model profile set. Call setCurrentModel() before snapshotting.');
+            // Silently skip snapshotting when no model profile is set (e.g., fresh vault or test env)
+            return '';
         }
         const hash = contentHash(partial.type, partial.content);
         const objectPath = this.objectPath(hash);

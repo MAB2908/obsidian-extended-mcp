@@ -79,6 +79,9 @@ export function createSecurityTools(
           replacement?: string;
           preview?: boolean;
         };
+        if (!filter || typeof filter !== 'object') {
+          return { content: [{ type: 'text', text: 'batch_edit requires a filter object with folder, glob, or tag properties.' }], isError: true };
+        }
         const ctx = resolveVault(args as Record<string, unknown>);
         const auth = security.authorize('batch_edit', args as Record<string, unknown>);
         if (!auth.allowed) {

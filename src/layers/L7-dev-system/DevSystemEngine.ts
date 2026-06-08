@@ -75,7 +75,7 @@ export class DevSystemEngine {
       updated: nowIso(),
     };
     await this.writeNote(this.config.promptsFolder, prompt.id, this.serializePrompt(prompt));
-    await this.mabs?.snapshotPrompt(prompt, { message: 'Created prompt', modelAgnostic: prompt.variables.length === 0 });
+    await this.mabs?.snapshotPrompt(prompt, { message: 'Created prompt', modelAgnostic: (prompt.variables || []).length === 0 });
     return prompt;
   }
 
@@ -109,7 +109,8 @@ export class DevSystemEngine {
    * Execute a prompt by substituting variables and returning the rendered text.
    */
   executePrompt(prompt: DevPrompt, variables: Record<string, string>): string {
-    let result = `[РОЛЬ]\n${prompt.role}\n\n[КОНТЕКСТ]\n${prompt.context}\n\n[ЗАДАЧА]\n${prompt.task}\n\n[КРИТЕРИИ ПРИЁМКИ]\n${prompt.acceptanceCriteria.map((c, i) => `${i + 1}. ${c}`).join('\n')}`;
+    const criteria = (prompt.acceptanceCriteria || []).map((c, i) => `${i + 1}. ${c}`).join('\n');
+    let result = `[РОЛЬ]\n${prompt.role}\n\n[КОНТЕКСТ]\n${prompt.context}\n\n[ЗАДАЧА]\n${prompt.task}\n\n[КРИТЕРИИ ПРИЁМКИ]\n${criteria}`;
     if (prompt.verificationCommand) {
       result += `\n\n[ПРОВЕРКА]\n${prompt.verificationCommand}`;
     }
@@ -164,9 +165,13 @@ export class DevSystemEngine {
    * Render a skill as an executable checklist / algorithm.
    */
   executeSkill(skill: DevSkill, context: Record<string, string>): string {
-    let result = `# ${skill.name}\n\n${skill.description}\n\n## Предусловия\n${skill.preconditions.map((p) => `- [ ] ${p}`).join('\n')}\n\n## Пошаговый алгоритм\n${skill.steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n\n## Постусловия / Проверка\n${skill.postconditions.map((p) => `- [ ] ${p}`).join('\n')}`;
-    if (skill.examples.length > 0) {
-      result += `\n\n## Примеры\n${skill.examples.map((e) => `### ${e.scenario}\n**Вход:** ${e.input}\n**Ожидаемый результат:** ${e.expected}`).join('\n\n')}`;
+    const preconditions = (skill.preconditions || []).map((p) => `- [ ] ${p}`).join('\n');
+    const steps = (skill.steps || []).map((s, i) => `${i + 1}. ${s}`).join('\n');
+    const postconditions = (skill.postconditions || []).map((p) => `- [ ] ${p}`).join('\n');
+    let result = `# ${skill.name}\n\n${skill.description}\n\n## Предусловия\n${preconditions}\n\n## Пошаговый алгоритм\n${steps}\n\n## Постусловия / Проверка\n${postconditions}`;
+    const examples = skill.examples || [];
+    if (examples.length > 0) {
+      result += `\n\n## Примеры\n${examples.map((e) => `### ${e.scenario}\n**Вход:** ${e.input}\n**Ожидаемый результат:** ${e.expected}`).join('\n\n')}`;
     }
     for (const [key, value] of Object.entries(context)) {
       const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -322,7 +327,7 @@ export class DevSystemEngine {
       `id: ${p.id}`,
       `name: ${p.name}`,
       `role: ${p.role}`,
-      `variables: [${p.variables.map((v) => `"${v}"`).join(', ')}]`,
+      `variables: [${(p.variables || []).map((v) => `"${v}"`).join(', ')}]`,
       `created: ${p.created}`,
       `updated: ${p.updated}`,
       `---`,
@@ -335,7 +340,7 @@ export class DevSystemEngine {
       p.task,
       ``,
       `## Acceptance Criteria`,
-      p.acceptanceCriteria.map((c) => `- ${c}`).join('\n'),
+      (p.acceptanceCriteria || []).map((c) => `- ${c}`).join('\n'),
       p.verificationCommand ? `\n## Verification\n${p.verificationCommand}` : '',
     ].join('\n');
     return `${fm}\n${body}`;
@@ -353,22 +358,22 @@ export class DevSystemEngine {
     ].join('\n');
     const body = [
       `## Permissions`,
-      s.permissions.map((p) => `- \`${p.command}\`: ${p.action}`).join('\n'),
+      (s.permissions || []).map((p) => `- \`${p.command}\`: ${p.action}`).join('\n'),
       ``,
       `## Preconditions`,
-      s.preconditions.map((p) => `- [ ] ${p}`).join('\n'),
+      (s.preconditions || []).map((p) => `- [ ] ${p}`).join('\n'),
       ``,
       `## Steps`,
-      s.steps.map((step, i) => `${i + 1}. ${step}`).join('\n'),
+      (s.steps || []).map((step, i) => `${i + 1}. ${step}`).join('\n'),
       ``,
       `## Postconditions`,
-      s.postconditions.map((p) => `- [ ] ${p}`).join('\n'),
+      (s.postconditions || []).map((p) => `- [ ] ${p}`).join('\n'),
       ``,
       `## Examples`,
-      s.examples.map((e) => `### ${e.scenario}\n**Input:** ${e.input}\n**Expected:** ${e.expected}`).join('\n\n'),
+      (s.examples || []).map((e) => `### ${e.scenario}\n**Input:** ${e.input}\n**Expected:** ${e.expected}`).join('\n\n'),
       ``,
       `## Error Handling`,
-      s.errorHandling.map((e) => `- **${e.error}** → ${e.fix}`).join('\n'),
+      (s.errorHandling || []).map((e) => `- **${e.error}** → ${e.fix}`).join('\n'),
     ].join('\n');
     return `${fm}\n${body}`;
   }
@@ -386,10 +391,10 @@ export class DevSystemEngine {
     ].join('\n');
     const body = [
       `## Tools`,
-      a.tools.map((t) => `- ${t}`).join('\n'),
+      (a.tools || []).map((t) => `- ${t}`).join('\n'),
       ``,
       `## Constraints`,
-      a.constraints.map((c) => `- ${c}`).join('\n'),
+      (a.constraints || []).map((c) => `- ${c}`).join('\n'),
       ``,
       `## System Prompt`,
       a.systemPrompt,
@@ -411,12 +416,13 @@ export class DevSystemEngine {
     ].join('\n');
     const body = [
       `## Phases`,
-      w.phases.map((p, i) => {
-        const header = `### ${i + 1}. ${p.phase.toUpperCase()}`;
-        const agents = `**Agents:** ${p.agents.join(', ')}`;
-        const artifact = `**Artifact:** ${p.artifact}`;
-        const criteria = `**Exit Criteria:** ${p.exitCriteria}`;
-        const status = `**Status:** ${p.status}`;
+      (w.phases || []).map((p, i) => {
+        const phaseName = (p.phase || 'unknown').toUpperCase();
+        const header = `### ${i + 1}. ${phaseName}`;
+        const agents = `**Agents:** ${(p.agents || []).join(', ')}`;
+        const artifact = `**Artifact:** ${p.artifact || ''}`;
+        const criteria = `**Exit Criteria:** ${p.exitCriteria || ''}`;
+        const status = `**Status:** ${p.status || 'pending'}`;
         return [header, agents, artifact, criteria, status].join('\n');
       }).join('\n\n'),
     ].join('\n');

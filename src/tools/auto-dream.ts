@@ -137,7 +137,10 @@ export function createAutoDreamTools(): ToolHandler[] {
       },
       handler: async (args) => {
         const a = args as Record<string, unknown>;
-        const vaultPath = a.vaultPath as string;
+        const vaultPath = (a.vaultPath as string) || process.env.VAULT_PATH;
+        if (!vaultPath) {
+          return { content: [{ type: 'text', text: 'vaultPath is required. Provide the absolute path to the vault.' }], isError: true };
+        }
         const lines = (a.lines as number) ?? 20;
         const logPath = path.join(vaultPath, '.obsidian', 'auto-dream.log');
         try {
