@@ -11,3 +11,4 @@ vault/
 /test-vault/
 Backup7/
 .npmrc
+mcp-config.yaml
