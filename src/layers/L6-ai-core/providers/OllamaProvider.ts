@@ -27,7 +27,10 @@ export class OllamaProvider implements LLMProvider {
   }
 
   private headers(): Record<string, string> {
-    const h: Record<string, string> = { 'Content-Type': 'application/json' };
+    const h: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Connection': 'close',
+    };
     if (this.apiKey) {
       h['Authorization'] = `Bearer ${this.apiKey}`;
     }

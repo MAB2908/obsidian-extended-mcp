@@ -13,7 +13,10 @@ export class OllamaProvider {
         this.apiKey = config.apiKey || '';
     }
     headers() {
-        const h = { 'Content-Type': 'application/json' };
+        const h = {
+            'Content-Type': 'application/json',
+            'Connection': 'close',
+        };
         if (this.apiKey) {
             h['Authorization'] = `Bearer ${this.apiKey}`;
         }
