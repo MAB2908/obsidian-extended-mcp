@@ -1,3 +1,3 @@
 #!/usr/bin/env node
-import 'dotenv/config';
+import './shared/load-env.js';
 //# sourceMappingURL=index.d.ts.map

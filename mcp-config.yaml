@@ -10,13 +10,14 @@ server:
   enforceOntology: false
 
 llm:
-  defaultProvider: openai
+  defaultProvider: ollama
   openAiKey: ''
   openAiModel: ''
   anthropicKey: ''
   anthropicModel: ''
-  ollamaBaseUrl: http://localhost:11434
-  ollamaModel: ''
+  ollamaBaseUrl: https://ollama.com
+  ollamaApiKey: ''
+  ollamaModel: deepseek-v4-flash
   maxCacheSize: 1000
   cacheTtlMs: 3600000
   maxRetries: 3

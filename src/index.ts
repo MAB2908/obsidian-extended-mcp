@@ -1,13 +1,15 @@
 #!/usr/bin/env node
-// v0.2.0-beta.1:
-// v0.2.0-beta.1:
+// v0.2.0-beta.2:
+// v0.2.0-beta.2:
+// Load .env with override BEFORE any config imports (ESM hoisting safety)
+import './shared/load-env.js';
+
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import 'dotenv/config';
 import { promises as fs } from 'fs';
 import path from 'path';
 

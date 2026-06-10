@@ -7,6 +7,9 @@
  *   3. Hardcoded defaults in this file
  */
 
+// Ensure .env is loaded before any env reads (ESM hoisting safety)
+import './load-env.js';
+
 import { readFileSync, existsSync } from 'fs';
 import { load as loadYaml } from 'js-yaml';
 import { resolve } from 'path';

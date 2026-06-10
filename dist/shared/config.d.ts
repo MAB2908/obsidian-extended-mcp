@@ -5,6 +5,7 @@
  *   2. mcp-config.yaml (if present)
  *   3. Hardcoded defaults in this file
  */
+import './load-env.js';
 export declare const serverConfig: {
     /** Path to Obsidian vault */
     readonly vaultPath: string;
