@@ -217,7 +217,7 @@ export class SecurityEngine {
       return true;
     }
     if (destructiveCli.includes(toolName)) return true;
-    const aiWriteTools = ['ai_ingest', 'ai_compile', 'ai_link', 'ai_tag', 'ai_enrich'];
+    const aiWriteTools = ['ai_ingest', 'ai_compile', 'ai_link', 'ai_link_batch', 'ai_tag', 'ai_enrich'];
     if (aiWriteTools.includes(toolName)) return true;
     if (toolName.startsWith('write_') || toolName.startsWith('append_') || toolName.startsWith('patch_') || toolName.startsWith('delete_') || toolName.startsWith('move_')) return true;
     if (toolName === 'batch_edit' || toolName === 'manage_tags' || toolName === 'rollback' || toolName === 'pool_add_vault' || toolName === 'pool_remove_vault') return true;

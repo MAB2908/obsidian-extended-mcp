@@ -239,7 +239,7 @@ async function main() {
             }
         }
     }
-    const server = new Server({ name: 'obsidian-extended-mcp', version: '0.2.0-beta.1' }, { capabilities: { tools: {} } });
+    const server = new Server({ name: 'obsidian-extended-mcp', version: '0.2.0-beta.2' }, { capabilities: { tools: {} } });
     server.setRequestHandler(ListToolsRequestSchema, async () => {
         return {
             tools: dispatcher.listTools().map((t) => ({

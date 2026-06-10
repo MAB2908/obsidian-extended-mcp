@@ -221,16 +221,17 @@ export class PipelineOrchestrator implements IPipelineOrchestrator {
   async runLink(relPath: string): Promise<unknown> {
     return this.metrics.measure('link', async () => {
       const note = await this.vault.readNote(relPath);
-      const concepts: Array<{ path: string; title: string; content: string; tags: string[]; frontmatter: Record<string, unknown>; created?: Date }> = [];
+      // Collect ALL note titles as potential link targets, not just concepts
+      const allTitles: string[] = [];
       for await (const n of this.iterateAllNotes()) {
-        if (n.path.startsWith('concepts/')) {
-          concepts.push(n);
+        if (n.path !== relPath) {
+          allTitles.push(n.title);
         }
       }
       const result = await this.linkAgent.execute({
         content: note.content,
         title: note.title,
-        availableConcepts: concepts.map((c) => c.title),
+        availableTargets: allTitles,
       });
 
       let updated = note.content;
@@ -245,6 +246,91 @@ export class PipelineOrchestrator implements IPipelineOrchestrator {
       }
       return result;
     }, { itemsIn: 1, itemsOut: 1 });
+  }
+
+  async runLinkBatch(limit = 50, folder?: string): Promise<unknown> {
+    return this.metrics.measure('linkBatch', async () => {
+      // Collect all note titles once for reuse
+      const allTitles: string[] = [];
+      const candidates: Array<{ path: string; title: string; content: string }> = [];
+
+      for await (const n of this.iterateAllNotes()) {
+        allTitles.push(n.title);
+        // Skip if already has wikilinks or not in target folder
+        if (folder && !n.path.startsWith(folder)) continue;
+        if (n.content.includes('[[')) continue; // already linked
+        candidates.push({ path: n.path, title: n.title, content: n.content });
+      }
+
+      const toProcess = candidates.slice(0, limit);
+      const results: Array<{ path: string; linksAdded: number; suggestions: number }> = [];
+      const MAX_TARGETS = 100;
+
+      for (let i = 0; i < toProcess.length; i++) {
+        const candidate = toProcess[i];
+        console.error(`[LinkBatch] ${i + 1}/${toProcess.length}: ${candidate.path}`);
+
+        try {
+          // Filter targets: only titles that share words with candidate content (fast relevance)
+          const contentWords = new Set(
+            candidate.content.toLowerCase().split(/[^a-zа-я0-9]+/u).filter((w) => w.length > 2)
+          );
+          const scored = allTitles
+            .filter((t) => t !== candidate.title)
+            .map((t) => {
+              const titleWords = t.toLowerCase().split(/[^a-zа-я0-9]+/u).filter((w) => w.length > 2);
+              const score = titleWords.filter((w) => contentWords.has(w)).length;
+              return { title: t, score };
+            })
+            .sort((a, b) => b.score - a.score);
+
+          const relevant = scored.slice(0, MAX_TARGETS).map((s) => s.title);
+          const shortTitles = allTitles
+            .filter((t) => t !== candidate.title && !relevant.includes(t) && t.split(/\s+/).length <= 2)
+            .slice(0, 20);
+          const availableTargets = [...relevant, ...shortTitles].slice(0, MAX_TARGETS);
+
+          const result = await this.linkAgent.execute({
+            content: candidate.content,
+            title: candidate.title,
+            availableTargets,
+          });
+
+          let updated = candidate.content;
+          let added = 0;
+          for (const s of result.data.suggestions) {
+            if (s.confidence >= pipelineConfig.minConfidence) {
+              updated = updated.replace(s.phrase, `[[${s.target}|${s.phrase}]]`);
+              added++;
+            }
+          }
+          if (updated !== candidate.content) {
+            await this.vault.writeNote(candidate.path, updated, { overwrite: true });
+            this.indexer.markDirty(candidate.path);
+          }
+          results.push({ path: candidate.path, linksAdded: added, suggestions: result.data.suggestions.length });
+          if (added > 0) {
+            console.error(`[LinkBatch]   → added ${added} links`);
+          }
+        } catch (err) {
+          console.error(`[LinkBatch]   → failed: ${err instanceof Error ? err.message : String(err)}`);
+          results.push({ path: candidate.path, linksAdded: 0, suggestions: 0 });
+        }
+
+        // Delay between notes to avoid connection pool issues with Ollama Cloud
+        if (i < toProcess.length - 1) {
+          await new Promise((r) => setTimeout(r, 15000));
+        }
+      }
+
+      return {
+        data: {
+          processed: toProcess.length,
+          totalCandidates: candidates.length,
+          results,
+        },
+      };
+    }, { itemsIn: limit, itemsOut: limit });
   }
 
   async runLint(): Promise<unknown> {

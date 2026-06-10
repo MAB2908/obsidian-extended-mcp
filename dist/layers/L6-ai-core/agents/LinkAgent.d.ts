@@ -3,7 +3,7 @@ import type { AIResult } from '../../../shared/types.js';
 export interface LinkInput {
     content: string;
     title: string;
-    availableConcepts: string[];
+    availableTargets: string[];
 }
 export interface LinkOutput {
     suggestions: Array<{

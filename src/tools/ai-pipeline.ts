@@ -84,6 +84,24 @@ export function createAiPipelineTools(resolveVault: (args: Record<string, unknow
         return { content: [{ type: 'text', text: JSON.stringify(result) }] };
       },
     },
+    {
+      name: 'ai_link_batch',
+      description: 'Batch link orphaned notes using AI (limit prevents timeout)',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          limit: { type: 'number', description: 'Max notes to process (default 50)' },
+          folder: { type: 'string', description: 'Optional folder to target (e.g. "Knowledge Base/compiled")' },
+        },
+      },
+      handler: async (args) => {
+        const { limit, folder } = args as { limit?: number; folder?: string };
+        const ctx = resolveVault(args as Record<string, unknown>);
+        if (!ctx.pipeline) throw new PipelineError('PIPELINE_NOT_INITIALIZED', 'Pipeline not initialized');
+        const result = await ctx.pipeline.runLinkBatch(limit, folder);
+        return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+      },
+    },
     // DEPRECATED: ai_lint removed — use dream_scan with kinds: ['prune'] instead
     {
       name: 'ai_enrich',

@@ -5,7 +5,7 @@ import type { AIResult } from '../../../shared/types.js';
 export interface LinkInput {
   content: string;
   title: string;
-  availableConcepts: string[];
+  availableTargets: string[];
 }
 
 export interface LinkOutput {
@@ -14,7 +14,9 @@ export interface LinkOutput {
 
 export class LinkAgent extends AIAgent<LinkInput, LinkOutput> {
   getSystemPrompt(): string {
-    return `You are a Link Agent. Find unlinked mentions of concepts in a note and suggest wikilinks.
+    return `You are a Link Agent. Find unlinked mentions of concepts, people, places, or topics in a note and suggest wikilinks to other notes.
+You are given a list of available note titles — use ONLY these titles as link targets.
+Only suggest links when the mention is clearly related to the target note.
 Respond with valid JSON only.
 Output schema:
 {

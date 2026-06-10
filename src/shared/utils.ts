@@ -78,7 +78,18 @@ export function safeJsonParse(raw: string, maxSize = 10 * 1024 * 1024, maxDepth 
   if (raw.length > maxSize) {
     throw new Error(`JSON payload exceeds maximum size of ${maxSize} bytes`);
   }
-  const obj = JSON.parse(raw);
+  // Strip markdown code blocks and trim
+  let cleaned = raw.trim();
+  if (cleaned.startsWith('```json')) {
+    cleaned = cleaned.slice(7);
+  } else if (cleaned.startsWith('```')) {
+    cleaned = cleaned.slice(3);
+  }
+  if (cleaned.endsWith('```')) {
+    cleaned = cleaned.slice(0, -3);
+  }
+  cleaned = cleaned.trim();
+
   const checkDepth = (value: unknown, depth: number): void => {
     if (depth > maxDepth) {
       throw new Error(`JSON payload exceeds maximum depth of ${maxDepth}`);
@@ -89,6 +100,21 @@ export function safeJsonParse(raw: string, maxSize = 10 * 1024 * 1024, maxDepth 
       for (const key of Object.keys(value)) checkDepth((value as Record<string, unknown>)[key], depth + 1);
     }
   };
-  checkDepth(obj, 0);
-  return obj;
+
+  // Try direct parse first
+  try {
+    const obj = JSON.parse(cleaned);
+    checkDepth(obj, 0);
+    return obj;
+  } catch {
+    // Fallback: extract JSON object/array from text using regex
+    const jsonMatch = cleaned.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+    if (jsonMatch) {
+      const extracted = jsonMatch[0];
+      const obj = JSON.parse(extracted);
+      checkDepth(obj, 0);
+      return obj;
+    }
+    throw new Error('No valid JSON found in response');
+  }
 }

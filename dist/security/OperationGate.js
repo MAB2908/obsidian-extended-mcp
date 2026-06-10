@@ -15,7 +15,7 @@ export class OperationGate {
         const writeTools = [
             'write_note', 'append_note', 'patch_note', 'delete_note', 'move_note',
             'write_file', 'manage_tags', 'rollback',
-            'ai_ingest', 'ai_compile', 'ai_link', 'ai_tag', 'ai_enrich',
+            'ai_ingest', 'ai_compile', 'ai_link', 'ai_link_batch', 'ai_tag', 'ai_enrich',
             'pool_add_vault', 'pool_remove_vault',
             'batch_edit', 'build_index',
             'cli_eval', 'cli_plugin', 'cli_command', 'cli_daily', 'cli_properties',

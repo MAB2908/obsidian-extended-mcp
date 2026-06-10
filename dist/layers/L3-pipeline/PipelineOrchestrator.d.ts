@@ -24,6 +24,7 @@ export declare class PipelineOrchestrator implements IPipelineOrchestrator {
     runQuery(question: string): Promise<unknown>;
     runCompile(sinceDays?: number): Promise<unknown>;
     runLink(relPath: string): Promise<unknown>;
+    runLinkBatch(limit?: number, folder?: string): Promise<unknown>;
     runLint(): Promise<unknown>;
     runEnrich(relPath: string): Promise<unknown>;
     private iterateAllNotes;

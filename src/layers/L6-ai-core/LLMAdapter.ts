@@ -82,7 +82,6 @@ export class LLMAdapter {
       this.cache.delete(cacheKey);
     }
 
-    // Create the request promise and register it as in-flight
     const promise = this.executeGeneration<T>(request, providerName, provider, cacheKey, complexity);
     this.inFlight.set(cacheKey, promise as Promise<AIResult<unknown>>);
 
@@ -115,9 +114,9 @@ export class LLMAdapter {
         result.durationMs = Date.now() - start;
         this.setCache(cacheKey, result);
 
-        // Snapshot session context if MABS attached
+        // Snapshot session context if MABS attached (fire-and-forget with timeout)
         if (this.mabs) {
-          await this.mabs.snapshotSessionContext('llm-generation', {
+          const snapshotPromise = this.mabs.snapshotSessionContext('llm-generation', {
             provider: providerName,
             model: provider.model,
             requestMessages: request.messages.map((m) => ({ role: m.role, contentLength: m.content.length })),
@@ -129,8 +128,13 @@ export class LLMAdapter {
             userIntent: request.messages.find((m) => m.role === 'user')?.content.slice(0, 200),
             replayable: true,
             profileId: `model-${providerName}/${provider.model}`.toLowerCase().replace(/[^a-z0-9\/._-]/g, '_'),
-          }).catch((err: unknown) => {
+          });
+          Promise.race([
+            snapshotPromise,
+            new Promise<void>((_, reject) => setTimeout(() => reject(new Error('MABS snapshot timeout')), 5000)),
+          ]).catch((err: unknown) => {
             const msg = err instanceof Error ? err.message : String(err);
+            console.error(`[LLMAdapter] MABS snapshot failed: ${msg}`);
             this.audit?.log({ event: 'warn', tool: 'llm_snapshot', message: `MABS session snapshot failed: ${msg}`, blocked: false });
           });
         }
@@ -141,7 +145,13 @@ export class LLMAdapter {
         if (!this.isRetryableError(e)) {
           break;
         }
-        await new Promise((r) => setTimeout(r, llmConfig.retryBaseDelayMs * Math.pow(2, attempt - 1)));
+        // Use longer delay for connection errors to allow pool recovery
+        const errMsg = e instanceof Error ? e.message : String(e);
+        const isConnectionError = errMsg.includes('SocketError') || errMsg.includes('fetch failed') || errMsg.includes('ECONN');
+        const delayMs = isConnectionError
+          ? 5000 * Math.pow(2, attempt - 1)
+          : llmConfig.retryBaseDelayMs * Math.pow(2, attempt - 1);
+        await new Promise((r) => setTimeout(r, delayMs));
       }
     }
     throw lastError;
@@ -161,15 +171,20 @@ export class LLMAdapter {
   }
 
   private async selectProvider(complexity: TaskComplexity): Promise<string> {
-    // Priority: light -> ollama (local, fast)
-    // medium -> anthropic or openai (balanced)
-    // heavy -> openai or anthropic (best quality)
+    // Always prefer default provider if available (avoids timeouts on misconfigured providers)
+    const defaultProvider = this.providers.get(this.defaultProvider);
+    if (defaultProvider && (await defaultProvider.isAvailable().catch(() => false))) {
+      return this.defaultProvider;
+    }
+
+    // Fallback priorities by complexity
     const candidates: Record<TaskComplexity, string[]> = {
       light: ['ollama', 'anthropic', 'openai'],
       medium: ['anthropic', 'openai', 'ollama'],
       heavy: ['openai', 'anthropic', 'ollama'],
     };
     for (const name of candidates[complexity] ?? candidates.medium) {
+      if (name === this.defaultProvider) continue; // already checked above
       const provider = this.providers.get(name);
       if (provider && (await provider.isAvailable().catch(() => false))) {
         return name;

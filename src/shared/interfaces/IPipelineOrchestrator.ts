@@ -5,6 +5,7 @@ export interface IPipelineOrchestrator {
   runLint(): Promise<unknown>;
   runTag(relPath: string, ontology: string[]): Promise<unknown>;
   runLink(relPath: string): Promise<unknown>;
+  runLinkBatch(limit?: number, folder?: string): Promise<unknown>;
   runEnrich(relPath: string): Promise<unknown>;
   runQuery(question: string): Promise<unknown>;
 }

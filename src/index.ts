@@ -296,7 +296,7 @@ async function main() {
   }
 
   const server = new Server(
-    { name: 'obsidian-extended-mcp', version: '0.2.0-beta.1' },
+    { name: 'obsidian-extended-mcp', version: '0.2.0-beta.2' },
     { capabilities: { tools: {} } }
   );
 
