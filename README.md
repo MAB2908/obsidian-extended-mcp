@@ -1,7 +1,9 @@
-# Obsidian Extended MCP v0.2.0-beta.1
+# Obsidian Extended MCP v0.2.0-beta.3
 
 AI-first Knowledge Base Server integrating Obsidian with MCP clients.
 
+> **v0.2.0-beta.3** — Batch AI linking (`ai_link_batch`) with Ollama Cloud reliability fixes. `Connection: close` header prevents socket reuse errors on sequential requests. LinkAgent now targets all note titles (not just `concepts/`).
+>
 > **v0.2.0-beta.1** — Fixed event-loop blocking on large vaults (12,000+ notes). BackgroundIndexer and VaultManager now yield to the event loop every 50 iterations, eliminating MCP timeouts. Background indexing is skipped when `SEMANTIC_ENABLED=false`.
 
 ## Features
@@ -160,8 +162,8 @@ obsidian-mcp rollback --path ./vault --file path/to/note.md --to last
 ### Semantic (13)
 `bm25_search`, `graph_neighbors`, `graph_analyze_centrality`, `graph_detect_communities`, `build_index`, `semantic_search`, `semantic_search_db`, `db_stats`, `semantic_rag`, `fs_list_notes`, `fs_get_graph`, `fs_graph_find_path`
 
-### AI Core (7)
-`ai_ingest`, `ai_tag`, `ai_query`, `ai_compile`, `ai_link`, `ai_enrich`
+### AI Core (8)
+`ai_ingest`, `ai_tag`, `ai_query`, `ai_compile`, `ai_link`, `ai_link_batch`, `ai_enrich`
 
 ### CLI Bridge (10)
 `cli_backlinks`, `cli_orphans`, `cli_deadends`, `cli_unresolved`, `cli_search`, `cli_eval`, `cli_properties`, `cli_daily`, `cli_command`, `cli_plugin`
@@ -192,6 +194,17 @@ obsidian-mcp rollback --path ./vault --file path/to/note.md --to last
 
 ### Dev System — 4-Level (22)
 `dev_prompt_list`, `dev_prompt_create`, `dev_prompt_get`, `dev_prompt_delete`, `dev_prompt_execute`, `dev_skill_list`, `dev_skill_create`, `dev_skill_get`, `dev_skill_delete`, `dev_skill_execute`, `dev_agent_list`, `dev_agent_create`, `dev_agent_get`, `dev_agent_delete`, `dev_workflow_list`, `dev_workflow_create`, `dev_workflow_get`, `dev_workflow_delete`, `dev_workflow_advance`, `dev_workflow_fail`, `dev_claude_md_get`, `dev_claude_md_append`
+
+## Batch Linking (Standalone)
+
+For large vaults, use the standalone batch runner without MCP protocol overhead:
+
+```bash
+node scripts/run-link-batch.mjs 10        # link 10 orphans
+node scripts/run-link-batch.mjs 50 Archive # link 50 orphans in Archive/
+```
+
+Requires `OLLAMA_BASE_URL` and `OLLAMA_API_KEY` (for Ollama Cloud) or `OPENAI_API_KEY` in `.env`.
 
 ## Development
 
