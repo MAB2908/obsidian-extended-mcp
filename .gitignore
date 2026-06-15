@@ -12,3 +12,4 @@ vault/
 Backup7/
 .npmrc
 mcp-config.yaml
+tests/performance/.perf-pipeline-rollback-*
