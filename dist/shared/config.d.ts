@@ -143,6 +143,8 @@ export declare const fsConfig: {
     readonly maxBackups: number;
     /** Maximum note size in bytes (10 MB) */
     readonly maxNoteSize: number;
+    /** Create a backup before overwriting or patching existing notes */
+    readonly backupBeforeWrite: boolean;
 };
 export declare const fileTypeConfig: {
     /** Text file extensions recognized by FileTypeRouter */

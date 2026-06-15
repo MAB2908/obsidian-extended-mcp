@@ -17,7 +17,7 @@ export interface IVaultManager {
     replacement?: string,
   ): Promise<void>;
   deleteNote(relPath: string, opts?: DeleteOptions): Promise<void>;
-  moveNote(fromRel: string, toRel: string): Promise<void>;
+  moveNote(fromRel: string, toRel: string): Promise<{ updatedFiles: string[] }>;
   listDirectory(relDir?: string): Promise<{ name: string; isDirectory: boolean }[]>;
   listNotes(relDir?: string): Promise<string[]>;
   searchNotes(query: string, opts?: SearchOptions): Promise<SearchResult[]>;

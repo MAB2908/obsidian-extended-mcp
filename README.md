@@ -1,8 +1,8 @@
-# Obsidian Extended MCP v0.3.1
+# Obsidian Extended MCP v0.3.3
 
 AI-first Knowledge Base Server integrating Obsidian with MCP clients.
 
-> **v0.3.1** — `src/` is now in sync with `dist/`, `npm run build` is safe, and `bm25_search` / `semantic_search` run on SQLite FTS5 instead of in-memory BM25. Includes all v0.3.0 fixes: Ollama Cloud, concurrent tool-call ordering, `unicode61` FTS5, `ai_link` prompt limits, and the MCP checklist.
+> **v0.3.2** — `src/` is now in sync with `dist/`, `npm run build` is safe, and `bm25_search` / `semantic_search` run on SQLite FTS5 instead of in-memory BM25. Includes all v0.3.0 fixes: Ollama Cloud, concurrent tool-call ordering, `unicode61` FTS5, `ai_link` prompt limits, and the MCP checklist.
 >
 > **v0.2.0-beta.3** — Batch AI linking (`ai_link_batch`) with Ollama Cloud reliability fixes. `Connection: close` header prevents socket reuse errors on sequential requests. LinkAgent now targets all note titles (not just `concepts/`).
 >
@@ -11,7 +11,7 @@ AI-first Knowledge Base Server integrating Obsidian with MCP clients.
 ## Features
 
 - **Filesystem CRUD** — read, write, patch, move, delete notes with atomic writes and backups
-- **Semantic Search** — BM25 + vector embeddings with reciprocal rank fusion (RRF)
+- **Semantic Search** — FTS5 keyword search + vector embeddings with reciprocal rank fusion (RRF)
 - **Graph Engine** — PageRank, BFS pathfinding, backlink/orphan/deadend analysis
 - **AI Pipeline** — 7 agents: ingest, tag, query, compile, link, lint, enrich
 - **CLI & REST Bridges** — integrate with Obsidian CLI and Local REST API
@@ -97,9 +97,6 @@ All settings are controlled via environment variables:
 | `LLM_MAX_RETRIES` | `3` | Retry attempts on failure |
 | `LLM_RETRY_BASE_DELAY_MS` | `1000` | Base retry delay |
 | **Semantic / Graph** | | |
-| `BM25_K1` | `1.5` | BM25 term frequency saturation |
-| `BM25_B` | `0.75` | BM25 length normalization |
-| `BM25_DEFAULT_LIMIT` | `50` | Default BM25 result limit |
 | `RRF_K` | `60` | Reciprocal Rank Fusion constant |
 | `GRAPH_PAGERANK_ITERATIONS` | `20` | PageRank iterations |
 | `GRAPH_PAGERANK_DAMPING` | `0.85` | PageRank damping factor |
@@ -113,7 +110,7 @@ All settings are controlled via environment variables:
 | `SANDBOX_TIMEOUT_MS` | `5000` | CLI eval timeout (ms) |
 | `SANDBOX_ALLOWED_GLOBALS` | `app,DataviewAPI,moment,MetadataCache` | Sandbox globals whitelist |
 | `AUDIT_FORMAT` | `jsonl` | `jsonl` / `csv` / `markdown` |
-| `AUDIT_MAX_AGE_DAYS` | `30` | Audit log retention |
+| `AUDIT_MAX_AGE_DAYS` | `90` | Audit log retention |
 | `AUDIT_BATCH_SIZE` | `100` | Entries per flush |
 | `AUDIT_FLUSH_INTERVAL_MS` | `5000` | Flush interval |
 | `AUDIT_ROTATION_MB` | `10` | Log rotation threshold |
@@ -224,9 +221,6 @@ npm test
 | `LLM_MAX_RETRIES` | `3` | Max LLM retries |
 | `LLM_RETRY_BASE_DELAY_MS` | `1000` | Base retry delay |
 | `OLLAMA_EMBED_MODEL` | `nomic-embed-text` | Ollama embedding model |
-| `BM25_K1` | `1.5` | BM25 k1 parameter |
-| `BM25_B` | `0.75` | BM25 b parameter |
-| `BM25_DEFAULT_LIMIT` | `50` | BM25 default result limit |
 | `RRF_K` | `60` | RRF fusion constant |
 | `GRAPH_PAGERANK_ITERATIONS` | `20` | PageRank iterations |
 | `GRAPH_PAGERANK_DAMPING` | `0.85` | PageRank damping factor |
@@ -237,7 +231,7 @@ npm test
 | `SEMANTIC_RAG_TOP_K` | `5` | RAG top-k |
 | `SANDBOX_TIMEOUT_MS` | `5000` | Sandbox execution timeout |
 | `AUDIT_FORMAT` | `jsonl` | Audit log format |
-| `AUDIT_MAX_AGE_DAYS` | `30` | Audit retention |
+| `AUDIT_MAX_AGE_DAYS` | `90` | Audit retention |
 | `AUDIT_BATCH_SIZE` | `100` | Audit batch size |
 | `AUDIT_FLUSH_INTERVAL_MS` | `5000` | Audit flush interval |
 | `AUDIT_ROTATION_MB` | `10` | Audit rotation threshold |

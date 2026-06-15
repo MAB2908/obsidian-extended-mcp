@@ -172,6 +172,9 @@ export interface LintReport {
   warnings: Array<{ description: string; file: string; suggestedAction: string }>;
   recommendations: Array<{ description: string; suggestedAction: string }>;
   suggestedEdits: SuggestedEdit[];
+  /** Deterministic findings populated by PipelineOrchestrator.runLint for auto-fixing */
+  invalidTags?: Array<{ tag: string; file: string }>;
+  oldSeedlings?: string[];
 }
 
 // AI Core types

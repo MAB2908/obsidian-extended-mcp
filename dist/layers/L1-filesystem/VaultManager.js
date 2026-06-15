@@ -15,11 +15,13 @@ export class VaultManager {
     enforceOntology;
     cache = null;
     cacheGeneration = 0;
-    constructor(vaultPath, acl, tagEngine, enforceOntology = false) {
+    searchFn;
+    constructor(vaultPath, acl, tagEngine, enforceOntology = false, searchFn) {
         this.vaultPath = path.resolve(vaultPath);
         this.acl = acl || new FolderACL();
         this.tagEngine = tagEngine || new TagEngine();
         this.enforceOntology = enforceOntology;
+        this.searchFn = searchFn;
     }
     get root() {
         return this.vaultPath;
@@ -72,33 +74,8 @@ export class VaultManager {
         };
     }
     async readNoteTags(relPath) {
-        const full = await this.resolve(relPath);
-        let raw = '';
-        try {
-            const fd = await fs.open(full, 'r');
-            try {
-                const buf = Buffer.alloc(16384);
-                const { bytesRead } = await fd.read(buf, 0, 16384, 0);
-                raw = buf.toString('utf-8', 0, bytesRead);
-            }
-            finally {
-                await fd.close();
-            }
-        }
-        catch {
-            // Fallback to readFileSafe error handling on failure
-            raw = await this.readFileSafe(full);
-        }
-        // Fast path: if frontmatter is fully contained in the 16KB buffer, parse only that.
-        if (raw.startsWith('---')) {
-            const close = raw.indexOf('---', 3);
-            if (close !== -1) {
-                const parsed = matter(raw.slice(0, close + 3));
-                return this.normalizeTags(parsed.data.tags);
-            }
-        }
-        // Fallback for files without frontmatter or with very long frontmatter.
-        const parsed = matter(raw.length < 16384 ? raw : await this.readFileSafe(full));
+        const raw = await this.readRawContent(relPath);
+        const parsed = matter(raw);
         return this.normalizeTags(parsed.data.tags);
     }
     normalizeTags(tags) {
@@ -191,6 +168,20 @@ export class VaultManager {
             throw new FileSystemError('PATCH_TARGET_EMPTY', 'patch target cannot be empty');
         }
         const full = await this.resolve(relPath);
+        // Backup existing file before patching when configured
+        let backupPath;
+        if (fsConfig.backupBeforeWrite) {
+            try {
+                await fs.access(full, constants.F_OK);
+                backupPath = await this.createBackup(full);
+            }
+            catch (e) {
+                const code = e && typeof e === 'object' && 'code' in e ? e.code : '';
+                if (code === 'EACCES' || code === 'EBUSY')
+                    throw new FileLockedError(full);
+                // ENOENT = file does not exist yet, proceed without backup
+            }
+        }
         const existing = await this.readFileSafe(full);
         let updated;
         switch (operation) {
@@ -210,7 +201,11 @@ export class VaultManager {
                 throw new UnknownOperationError(operation);
         }
         this.checkSize(updated);
-        await this.atomicWrite(full, updated);
+        // Skip duplicate backup in atomicWrite; we already backed up above when enabled
+        await this.atomicWrite(full, updated, 3, true, true);
+        if (backupPath) {
+            await this.pruneBackups(fsConfig.maxBackups);
+        }
         this.invalidateCache();
     }
     async deleteNote(relPath, opts) {
@@ -223,9 +218,22 @@ export class VaultManager {
         await this.pruneBackups(fsConfig.maxBackups);
         if (opts?.soft) {
             const trashDir = path.join(this.vaultPath, fsConfig.trashDir);
-            await fs.mkdir(trashDir, { recursive: true });
-            const dest = path.join(trashDir, path.basename(relPath));
-            await fs.rename(full, dest);
+            const dest = path.join(trashDir, relPath);
+            await fs.mkdir(path.dirname(dest), { recursive: true });
+            // Avoid collisions in trash by appending a timestamp if the destination exists.
+            const ext = path.extname(relPath);
+            const base = path.basename(relPath, ext);
+            let finalDest = dest;
+            while (true) {
+                try {
+                    await fs.access(finalDest, constants.F_OK);
+                    finalDest = path.join(path.dirname(dest), `${base}-${Date.now()}${ext}`);
+                }
+                catch {
+                    break;
+                }
+            }
+            await fs.rename(full, finalDest);
         }
         else {
             await fs.unlink(full);
@@ -238,6 +246,9 @@ export class VaultManager {
         }
         const fromFull = await this.resolve(fromRel);
         const toFull = await this.resolve(toRel);
+        if (fromFull === toFull) {
+            return { updatedFiles: [] };
+        }
         // Auto-backup source before destructive operation
         await this.createBackup(fromFull);
         // Backup destination if it exists (HIGH-008)
@@ -252,8 +263,81 @@ export class VaultManager {
         }
         const dir = path.dirname(toFull);
         await fs.mkdir(dir, { recursive: true });
-        await fs.rename(fromFull, toFull);
+        // Ensure consistent cross-platform behavior: remove the destination after
+        // backing it up so rename never fails due to an existing file on Windows.
+        try {
+            await fs.access(toFull, constants.F_OK);
+            await fs.unlink(toFull);
+        }
+        catch { /* destination doesn't exist */ }
+        try {
+            await fs.rename(fromFull, toFull);
+        }
+        catch (renameErr) {
+            const rCode = renameErr && typeof renameErr === 'object' && 'code' in renameErr ? renameErr.code : '';
+            if (rCode === 'EXDEV') {
+                await fs.copyFile(fromFull, toFull);
+                await fs.unlink(fromFull).catch(() => { });
+            }
+            else {
+                throw renameErr;
+            }
+        }
+        const updatedFiles = await this.updateBacklinksAfterMove(fromRel, toRel);
         this.invalidateCache();
+        return { updatedFiles };
+    }
+    async updateBacklinksAfterMove(fromRel, toRel) {
+        const oldBase = fromRel.replace(/\.md$/i, '');
+        const newBase = toRel.replace(/\.md$/i, '');
+        const oldBasename = path.basename(oldBase);
+        const newBasename = path.basename(newBase);
+        const oldBaseWithExt = fromRel;
+        const oldBasenameWithExt = path.basename(fromRel);
+        const files = await this.collectMarkdownFiles('');
+        const updated = [];
+        // Deduplicate targets while preserving longest-first order so path matches beat basename matches
+        const targets = [...new Set([oldBaseWithExt, oldBase, oldBasenameWithExt, oldBasename])];
+        const replacements = targets.map((target) => ({
+            target,
+            replacement: target === oldBasename || target === oldBasenameWithExt ? newBasename : newBase,
+        }));
+        for (let i = 0; i < files.length; i++) {
+            if (i % 50 === 0 && i > 0)
+                await this.yieldEventLoop();
+            const relPath = files[i];
+            if (relPath === toRel)
+                continue;
+            if (!this.acl.isReadAllowed(relPath) || !this.acl.isWriteAllowed(relPath))
+                continue;
+            const full = await this.resolve(relPath);
+            let content;
+            try {
+                content = await this.readFileSafe(full);
+            }
+            catch {
+                continue;
+            }
+            const original = content;
+            for (const { target, replacement } of replacements) {
+                content = this.replaceWikilinkTarget(content, target, replacement);
+            }
+            if (content !== original) {
+                try {
+                    await this.atomicWrite(full, content);
+                    updated.push(relPath);
+                }
+                catch {
+                    // best-effort backlink update
+                }
+            }
+        }
+        return updated;
+    }
+    replaceWikilinkTarget(content, oldTarget, newTarget) {
+        const escapedOld = oldTarget.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`\\[\\[${escapedOld}(\\|[^\\]]*)?\\]\\]`, 'g');
+        return content.replace(regex, (_match, alias) => `[[${newTarget}${alias || ''}]]`);
     }
     async listDirectory(relDir = '') {
         const full = await this.resolve(relDir || '.');
@@ -268,8 +352,26 @@ export class VaultManager {
     async searchNotes(query, opts) {
         const folder = opts?.folder ?? '';
         const limit = opts?.limit ?? 50;
-        const all = await this.collectMarkdownFiles(folder);
         const qTokens = tokenize(query);
+        // Use injected FTS search when available (e.g. semantic DB FTS5 index)
+        if (this.searchFn) {
+            const raw = await this.searchFn(query, limit * 2);
+            const folderPrefix = folder ? (folder.endsWith('/') ? folder : `${folder}/`) : '';
+            const results = [];
+            for (const r of raw) {
+                if (folderPrefix && !r.path.startsWith(folderPrefix))
+                    continue;
+                const highlights = qTokens.filter((t) => r.snippet?.toLowerCase().includes(t) || r.path.toLowerCase().includes(t));
+                results.push({
+                    path: r.path,
+                    score: r.score,
+                    snippet: r.snippet ?? '',
+                    highlights: highlights.length > 0 ? highlights : qTokens,
+                });
+            }
+            return results.slice(0, limit);
+        }
+        const all = await this.collectMarkdownFiles(folder);
         const results = [];
         for (let i = 0; i < all.length; i++) {
             if (i % 50 === 0 && i > 0)
@@ -331,6 +433,9 @@ export class VaultManager {
         }
         return stats;
     }
+    getOntologyTags() {
+        return this.tagEngine.getOntology().allowedTags;
+    }
     async listAllTags() {
         if (this.cache && Object.keys(this.cache.tags).length > 0)
             return this.cache.tags;
@@ -376,7 +481,7 @@ export class VaultManager {
             throw new ReadFailedError(fullPath);
         }
     }
-    async atomicWrite(fullPath, content, retries = 3, overwrite = true) {
+    async atomicWrite(fullPath, content, retries = 3, overwrite = true, skipBackup = false) {
         await FileLock.withLock(fullPath, async () => {
             for (let i = 0; i < retries; i++) {
                 const tmpPath = `${fullPath}.tmp.${randomBytes(4).toString('hex')}`;
@@ -395,16 +500,18 @@ export class VaultManager {
                         }
                     }
                     let backupPath;
-                    try {
-                        await fs.access(fullPath, constants.F_OK);
-                        backupPath = await this.createBackup(fullPath);
-                    }
-                    catch (e) {
-                        const code = e && typeof e === 'object' && 'code' in e ? e.code : '';
-                        if (code === 'EACCES' || code === 'EBUSY') {
-                            throw new FileLockedError(fullPath);
+                    if (!skipBackup && fsConfig.backupBeforeWrite) {
+                        try {
+                            await fs.access(fullPath, constants.F_OK);
+                            backupPath = await this.createBackup(fullPath);
                         }
-                        // ENOENT = no existing file, proceed
+                        catch (e) {
+                            const code = e && typeof e === 'object' && 'code' in e ? e.code : '';
+                            if (code === 'EACCES' || code === 'EBUSY') {
+                                throw new FileLockedError(fullPath);
+                            }
+                            // ENOENT = no existing file, proceed
+                        }
                     }
                     await fs.writeFile(tmpPath, content, { flag: 'wx' });
                     if (!overwrite) {

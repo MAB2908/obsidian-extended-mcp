@@ -1,17 +1,27 @@
 // v0.2b:
 import { createContext, Script } from 'node:vm';
 import { securityConfig } from '../shared/config.js';
+import { SecurityError } from '../shared/errors.js';
 const DEFAULT_FORBIDDEN = [
+    // cli_eval hardening: explicit forbidden patterns
     /\brequire\s*\(/,
-    /\beval\s*\(/,
-    /\beval\s*[`"]/,
-    /\bFunction\s*\(/,
-    /\bFunction\s*[`"]/,
-    /\.\s*constructor\b/,
-    /\bimport\s*\(/,
-    /\bchild_process\b/,
+    /\brequire\s*\.\s*call\b/,
+    /\bfs\s*\./,
     /\bfs\b/,
+    /\bchild_process\b/,
+    /\bprocess\./,
     /\bprocess\b/,
+    /\beval\s*\(/,
+    /\beval\s*\.\s*call\b/,
+    /\beval\s*\.\s*apply\b/,
+    /\beval\s*[`"]/,
+    /\beval\?\.\s*\(/,
+    /\bFunction\s*\(/,
+    /\bFunction\s*\.\s*call\b/,
+    /\bFunction\s*\.\s*apply\b/,
+    /\bFunction\s*[`"]/,
+    /\bFunction\?\.\s*\(/,
+    /\.\s*constructor\b/,
     /\bfetch\s*\(/,
     /\bXMLHttpRequest\b/,
     /\bWebSocket\b/,
@@ -36,10 +46,6 @@ const DEFAULT_FORBIDDEN = [
     /\b__proto__\b/,
     /\bObject\.setPrototypeOf\b/,
     /\barguments\.callee\b/,
-    /\beval\.call\b/,
-    /\beval\.apply\b/,
-    /\bFunction\.call\b/,
-    /\bFunction\.apply\b/,
     /\bsetTimeout\s*\(/,
     /\bsetInterval\s*\(/,
 ];
@@ -80,7 +86,7 @@ export class Sandbox {
     async execute(code, context) {
         const validation = this.validate(code);
         if (!validation.allowed) {
-            throw new Error(`Sandbox validation failed: ${validation.reason}`);
+            throw new SecurityError('E405', 'Forbidden pattern detected in eval code');
         }
         // Build a minimal global context exposing only allowed globals + user context
         const sandboxGlobals = {};
@@ -99,8 +105,9 @@ export class Sandbox {
                 // CRITICAL FIX (SB-001): Shallow-clone before mutating so we don't corrupt host globals
                 const clone = Object.create(Object.getPrototypeOf(val));
                 Object.assign(clone, val);
-                Object.freeze(clone);
+                // Strip prototype BEFORE freezing; setPrototypeOf on a frozen object throws
                 Object.setPrototypeOf(clone, null);
+                Object.freeze(clone);
                 sandboxGlobals[key] = clone;
             }
         }

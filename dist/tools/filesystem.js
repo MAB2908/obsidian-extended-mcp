@@ -117,9 +117,12 @@ export function createFilesystemTools(resolveVault, fileRouter) {
             handler: async (args) => {
                 const { from, to } = args;
                 const ctx = resolveVault(args);
-                await ctx.vault.moveNote(from, to);
+                const { updatedFiles } = await ctx.vault.moveNote(from, to);
                 ctx.indexer?.markDirty(to);
-                return { content: [{ type: 'text', text: `Moved ${from} → ${to}` }] };
+                const summary = updatedFiles.length > 0
+                    ? `Moved ${from} → ${to}\nUpdated backlinks in ${updatedFiles.length} file(s): ${updatedFiles.join(', ')}`
+                    : `Moved ${from} → ${to}`;
+                return { content: [{ type: 'text', text: summary }] };
             },
         },
         {

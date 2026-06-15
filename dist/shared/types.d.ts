@@ -166,6 +166,12 @@ export interface LintReport {
         suggestedAction: string;
     }>;
     suggestedEdits: SuggestedEdit[];
+    /** Deterministic findings populated by PipelineOrchestrator.runLint for auto-fixing */
+    invalidTags?: Array<{
+        tag: string;
+        file: string;
+    }>;
+    oldSeedlings?: string[];
 }
 export interface AIResult<T> {
     data: T;

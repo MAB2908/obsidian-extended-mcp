@@ -30,6 +30,12 @@ export declare class AuditLogger {
     private redactObject;
     log(entry: Omit<AuditEntry, 'timestamp' | 'sessionId'>): void;
     flush(): Promise<void>;
+    private formatChunk;
+    private fileHasContent;
+    private formatCsvChunk;
+    private fileHasContentSync;
+    private escapeCsv;
+    private formatMarkdownChunk;
     query(options?: {
         event?: string;
         tool?: string;
@@ -37,6 +43,9 @@ export declare class AuditLogger {
         until?: Date;
         limit?: number;
     }): Promise<AuditEntry[]>;
+    private parseCsv;
+    private parseCsvLine;
+    private parseMarkdown;
     rotateIfNeeded(): Promise<void>;
     private generateSessionId;
 }

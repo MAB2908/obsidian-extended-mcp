@@ -82,7 +82,9 @@ export class MockLLMProvider implements LLMProvider {
           recommendations: [
             { description: '2 orphan notes found', suggestedAction: 'Link meeting-notes and inbox-thought to relevant concepts' },
           ],
-          suggestedEdits: [],
+          suggestedEdits: [
+            { file: 'concepts/neural-networks.md', operation: 'replace', target: '[[gradient-descent]]', replacement: '[[gradient-descent|gradient descent]]' },
+          ],
         } as unknown as T,
         confidence: 0.85,
         reasoning: 'mock lint',

@@ -63,8 +63,6 @@ export class VaultPool {
 
     const promise = (async () => {
       const vaultAcl = acl || new FolderACL();
-      const vault = new VaultManager(resolved, vaultAcl, undefined, enforceOntology);
-      const graph = new GraphEngine();
       const semanticDb = new SemanticDatabase(resolved);
       try {
         await semanticDb.initSchema();
@@ -72,6 +70,8 @@ export class VaultPool {
         semanticDb.close();
         throw err;
       }
+      const vault = new VaultManager(resolved, vaultAcl, undefined, enforceOntology, semanticDb.searchFTS.bind(semanticDb));
+      const graph = new GraphEngine();
 
       const entry: VaultEntry = { vault, graph, semanticDb, acl: vaultAcl };
       this.entries.set(resolved, entry);

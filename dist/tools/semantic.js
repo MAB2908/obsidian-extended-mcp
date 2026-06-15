@@ -85,7 +85,7 @@ export function createSemanticTools(resolveVault) {
         },
         {
             name: 'semantic_search',
-            description: 'Semantic search via vector embeddings (RRF with BM25)',
+            description: 'Semantic search via vector embeddings (RRF with FTS5 keyword search)',
             inputSchema: {
                 type: 'object',
                 properties: { query: { type: 'string' }, limit: { type: 'number' }, vaultPath: { type: 'string', description: 'Optional vault path (multi-vault mode)' } },

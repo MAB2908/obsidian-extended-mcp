@@ -106,6 +106,73 @@ describe('VaultManager', () => {
     expect(note.content).toBe('x');
     await expect(vault.readNote('old.md')).rejects.toThrow();
   });
+
+  it('updates backlinks when moving a note', async () => {
+    await vault.writeNote('folder/old.md', 'x');
+    await vault.writeNote('ref.md', 'See [[folder/old]] and [[old|alias text]].');
+    const { updatedFiles } = await vault.moveNote('folder/old.md', 'moved/new.md');
+    expect(updatedFiles).toContain('ref.md');
+    const ref = await vault.readNote('ref.md');
+    expect(ref.content).toBe('See [[moved/new]] and [[new|alias text]].');
+  });
+
+  it('creates a backup before patching an existing note', async () => {
+    await vault.writeNote('patch-backup.md', 'original');
+    await vault.patchNote('patch-backup.md', 'original', 'replace', 'updated');
+    const backups = await vault.listBackups();
+    expect(backups.some((b) => b.relPath === 'patch-backup.md')).toBe(true);
+    const note = await vault.readNote('patch-backup.md');
+    expect(note.content).toBe('updated');
+  });
+
+  it('uses injected FTS search when available', async () => {
+    const ftsVault = new VaultManager(TEST_VAULT, undefined, undefined, false, (q, limit) => [
+      { path: 'fts-result.md', score: 0.9, snippet: `matched ${q}` },
+    ]);
+    const results = await ftsVault.searchNotes('alpha', { limit: 5 });
+    expect(results).toHaveLength(1);
+    expect(results[0].path).toBe('fts-result.md');
+    expect(results[0].score).toBe(0.9);
+    expect(results[0].snippet).toBe('matched alpha');
+  });
+
+  it('readNoteTags parses tags in long frontmatter', async () => {
+    const longValue = 'x'.repeat(20 * 1024);
+    await vault.writeNote('long-fm.md', `---\nlong: ${longValue}\ntags: [deep-tag]\n---\nBody`);
+    const tags = await vault.readNoteTags('long-fm.md');
+    expect(tags).toEqual(['deep-tag']);
+  });
+
+  it('soft delete preserves folder structure in .trash', async () => {
+    await vault.writeNote('concepts/soft-folder.md', 'x');
+    await vault.deleteNote('concepts/soft-folder.md', { soft: true });
+    const trash = await fs.readFile(path.join(TEST_VAULT, '.trash', 'concepts', 'soft-folder.md'), 'utf-8');
+    expect(trash).toBe('x');
+    await expect(vault.readNote('concepts/soft-folder.md')).rejects.toThrow();
+  });
+
+  it('soft delete appends timestamp when trash destination exists', async () => {
+    await fs.mkdir(path.join(TEST_VAULT, '.trash', 'concepts'), { recursive: true });
+    await fs.writeFile(path.join(TEST_VAULT, '.trash', 'concepts', 'collision.md'), 'old', 'utf-8');
+    await vault.writeNote('concepts/collision.md', 'new');
+    await vault.deleteNote('concepts/collision.md', { soft: true });
+    const entries = await fs.readdir(path.join(TEST_VAULT, '.trash', 'concepts'));
+    expect(entries.length).toBe(2);
+    expect(entries).toContain('collision.md');
+    expect(entries.some((e) => e.startsWith('collision-') && e.endsWith('.md'))).toBe(true);
+  });
+
+  it('moveNote overwrites destination and keeps a backup', async () => {
+    await vault.writeNote('src.md', 'source content');
+    await vault.writeNote('dst.md', 'destination content');
+    const { updatedFiles } = await vault.moveNote('src.md', 'dst.md');
+    expect(updatedFiles).toEqual([]);
+    const note = await vault.readNote('dst.md');
+    expect(note.content).toBe('source content');
+    await expect(vault.readNote('src.md')).rejects.toThrow();
+    const backups = await vault.listBackups();
+    expect(backups.some((b) => b.relPath === 'dst.md')).toBe(true);
+  });
 });
 
 describe('VaultManager with ontology enforcement', () => {

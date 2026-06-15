@@ -294,6 +294,16 @@ export async function setupTestServer(fixturePath: string, useMockLLM = false): 
         return { content: [{ type: 'text', text: JSON.stringify(result) }] };
       },
     });
+
+    dispatcher.register({
+      name: 'ai_lint',
+      description: 'Run lint analysis over the vault',
+      inputSchema: { type: 'object', properties: {} },
+      handler: async () => {
+        const result = await pipeline!.runLint();
+        return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+      },
+    });
   }
 
   // Manually build graph and FTS5 index synchronously (avoid async background batch issues in tests)

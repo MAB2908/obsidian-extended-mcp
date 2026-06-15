@@ -1,6 +1,7 @@
 // v0.2b:
 import { describe, it, expect } from 'vitest';
 import { Sandbox } from '../../src/security/Sandbox.js';
+import { SecurityError } from '../../src/shared/errors.js';
 
 describe('Sandbox', () => {
   describe('validate', () => {
@@ -125,7 +126,10 @@ describe('Sandbox', () => {
       const sandbox = new Sandbox();
       await expect(
         sandbox.execute('require("fs").readFileSync("/etc/passwd")')
-      ).rejects.toThrow(/Sandbox validation failed/);
+      ).rejects.toThrow(SecurityError);
+      await expect(
+        sandbox.execute('require("fs").readFileSync("/etc/passwd")')
+      ).rejects.toThrow('Forbidden pattern detected in eval code');
     });
 
     it('supports async/await inside vm', async () => {
@@ -138,21 +142,44 @@ describe('Sandbox', () => {
       const sandbox = new Sandbox();
       await expect(
         sandbox.execute(`({}).__proto__.polluted = true`)
-      ).rejects.toThrow('Sandbox validation failed');
+      ).rejects.toThrow('Forbidden pattern detected in eval code');
     });
 
     it('rejects eval template literal bypass', async () => {
       const sandbox = new Sandbox();
       await expect(
         sandbox.execute('eval`process.exit(1)`')
-      ).rejects.toThrow('Sandbox validation failed');
+      ).rejects.toThrow('Forbidden pattern detected in eval code');
     });
 
     it('rejects Function template literal bypass', async () => {
       const sandbox = new Sandbox();
       await expect(
         sandbox.execute('Function`return require("fs")`')
-      ).rejects.toThrow('Sandbox validation failed');
+      ).rejects.toThrow('Forbidden pattern detected in eval code');
+    });
+
+    it.each([
+      'require("fs")',
+      'fs.readFileSync("x")',
+      'child_process.exec("x")',
+      'process.exit(1)',
+      'eval("1+1")',
+      'new Function("return 1")',
+    ])('rejects cli_eval forbidden pattern in %s', async (code) => {
+      const sandbox = new Sandbox();
+      await expect(sandbox.execute(code)).rejects.toThrow('Forbidden pattern detected in eval code');
+    });
+
+    it.each([
+      'return 1 + 1',
+      'return typeof app',
+      'const x = 42; return x;',
+      'return ({ a: 1 }).a',
+      'return [1, 2, 3].map((x) => x * 2)',
+    ])('allows safe code: %s', async (code) => {
+      const sandbox = new Sandbox();
+      await expect(sandbox.execute(code)).resolves.toBeDefined();
     });
   });
 });

@@ -130,9 +130,12 @@ export function createFilesystemTools(
       handler: async (args) => {
         const { from, to } = args as { from: string; to: string };
         const ctx = resolveVault(args as Record<string, unknown>);
-        await ctx.vault.moveNote(from, to);
+        const { updatedFiles } = await ctx.vault.moveNote(from, to);
         ctx.indexer?.markDirty(to);
-        return { content: [{ type: 'text', text: `Moved ${from} → ${to}` }] };
+        const summary = updatedFiles.length > 0
+          ? `Moved ${from} → ${to}\nUpdated backlinks in ${updatedFiles.length} file(s): ${updatedFiles.join(', ')}`
+          : `Moved ${from} → ${to}`;
+        return { content: [{ type: 'text', text: summary }] };
       },
     },
     {

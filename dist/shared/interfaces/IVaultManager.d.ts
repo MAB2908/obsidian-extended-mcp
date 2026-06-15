@@ -9,7 +9,9 @@ export interface IVaultManager {
     appendNote(relPath: string, content: string): Promise<void>;
     patchNote(relPath: string, target: string, operation: 'replace' | 'append' | 'prepend' | 'delete', replacement?: string): Promise<void>;
     deleteNote(relPath: string, opts?: DeleteOptions): Promise<void>;
-    moveNote(fromRel: string, toRel: string): Promise<void>;
+    moveNote(fromRel: string, toRel: string): Promise<{
+        updatedFiles: string[];
+    }>;
     listDirectory(relDir?: string): Promise<{
         name: string;
         isDirectory: boolean;

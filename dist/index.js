@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-// v0.3.0:
-// v0.3.0:
+// v0.3.3:
 // Load .env with override BEFORE any config imports (ESM hoisting safety)
 import './shared/load-env.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -240,7 +239,7 @@ async function main() {
             }
         }
     }
-    const server = new Server({ name: 'obsidian-extended-mcp', version: '0.3.1' }, { capabilities: { tools: {} } });
+    const server = new Server({ name: 'obsidian-extended-mcp', version: '0.3.3' }, { capabilities: { tools: {} } });
     server.setRequestHandler(ListToolsRequestSchema, async () => {
         return {
             tools: dispatcher.listTools().map((t) => ({

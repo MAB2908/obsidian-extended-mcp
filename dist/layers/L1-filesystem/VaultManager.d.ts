@@ -9,7 +9,16 @@ export declare class VaultManager implements IVaultManager {
     private enforceOntology;
     private cache;
     private cacheGeneration;
-    constructor(vaultPath: string, acl?: FolderACL, tagEngine?: TagEngine, enforceOntology?: boolean);
+    private searchFn?;
+    constructor(vaultPath: string, acl?: FolderACL, tagEngine?: TagEngine, enforceOntology?: boolean, searchFn?: (query: string, limit?: number) => Array<{
+        path: string;
+        score: number;
+        snippet?: string;
+    }> | Promise<Array<{
+        path: string;
+        score: number;
+        snippet?: string;
+    }>>);
     get root(): string;
     isWriteAllowed(relPath: string): boolean;
     private invalidateCache;
@@ -26,7 +35,11 @@ export declare class VaultManager implements IVaultManager {
     appendNote(relPath: string, content: string): Promise<void>;
     patchNote(relPath: string, target: string, operation: 'replace' | 'append' | 'prepend' | 'delete', replacement?: string): Promise<void>;
     deleteNote(relPath: string, opts?: DeleteOptions): Promise<void>;
-    moveNote(fromRel: string, toRel: string): Promise<void>;
+    moveNote(fromRel: string, toRel: string): Promise<{
+        updatedFiles: string[];
+    }>;
+    private updateBacklinksAfterMove;
+    private replaceWikilinkTarget;
     listDirectory(relDir?: string): Promise<{
         name: string;
         isDirectory: boolean;
@@ -39,6 +52,7 @@ export declare class VaultManager implements IVaultManager {
         totalTags: number;
         totalLinks: number;
     }>;
+    getOntologyTags(): string[];
     listAllTags(): Promise<Record<string, number>>;
     private readFileSafe;
     private atomicWrite;

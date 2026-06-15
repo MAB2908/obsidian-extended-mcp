@@ -1,4 +1,5 @@
 import { DreamingEngine } from '../layers/L9-dreaming/DreamingEngine.js';
+import { PipelineError } from '../shared/errors.js';
 export function createDreamingTools(resolveVault) {
     /** Lazily initialize DreamingEngine on a vault entry */
     async function getEngine(ctx) {
@@ -12,10 +13,53 @@ export function createDreamingTools(resolveVault) {
         ctx.dreaming = engine;
         return engine;
     }
+    async function applySafeFixes(vault, report) {
+        const fixes = [];
+        // Remove tags that are not present in the vault ontology
+        const invalidByFile = new Map();
+        for (const { tag, file } of report.invalidTags ?? []) {
+            const set = invalidByFile.get(file) ?? new Set();
+            set.add(tag);
+            invalidByFile.set(file, set);
+        }
+        for (const [file, tags] of invalidByFile) {
+            try {
+                const note = await vault.readNote(file);
+                const newTags = note.tags.filter((t) => !tags.has(t));
+                if (newTags.length !== note.tags.length) {
+                    await vault.writeNote(file, note.content, {
+                        frontmatter: { ...note.frontmatter, tags: newTags },
+                        overwrite: true,
+                    });
+                    fixes.push({ file, type: 'removed-invalid-tags', details: Array.from(tags).join(', ') });
+                }
+            }
+            catch (err) {
+                fixes.push({ file, type: 'removed-invalid-tags', error: err instanceof Error ? err.message : String(err) });
+            }
+        }
+        // Promote old seedlings to evergreen so they stop being flagged
+        for (const file of report.oldSeedlings ?? []) {
+            try {
+                const note = await vault.readNote(file);
+                if (note.frontmatter.status === 'seedling') {
+                    await vault.writeNote(file, note.content, {
+                        frontmatter: { ...note.frontmatter, status: 'evergreen' },
+                        overwrite: true,
+                    });
+                    fixes.push({ file, type: 'promoted-seedling', details: 'status: seedling → evergreen' });
+                }
+            }
+            catch (err) {
+                fixes.push({ file, type: 'promoted-seedling', error: err instanceof Error ? err.message : String(err) });
+            }
+        }
+        return fixes;
+    }
     return [
         {
             name: 'dream_scan',
-            description: 'L9-Dreaming: Scan the vault for maintenance candidates (link gaps, merge opportunities, stale notes, missing MOCs). Returns a session ID and ranked candidates.',
+            description: 'L9-Dreaming: Scan the vault for maintenance candidates (link gaps, merge opportunities, stale notes, missing MOCs). Optionally fix invalid tags and old seedlings. Returns a session ID, ranked candidates, and any applied fixes.',
             inputSchema: {
                 type: 'object',
                 properties: {
@@ -33,6 +77,10 @@ export function createDreamingTools(resolveVault) {
                         type: 'string',
                         description: 'Optional domain prefix filter',
                     },
+                    fix: {
+                        type: 'boolean',
+                        description: 'Apply safe fixes after scan (invalid tags, old seedlings)',
+                    },
                 },
                 required: [],
             },
@@ -41,17 +89,25 @@ export function createDreamingTools(resolveVault) {
                 const ctx = resolveVault(a);
                 const engine = await getEngine(ctx);
                 const kinds = a.kinds?.filter((k) => ['link', 'merge', 'prune', 'synthesize'].includes(k));
-                const result = await engine.scan({
+                const scanResult = await engine.scan({
                     vaultPath: ctx.vaultPath,
                     kinds,
                     maxCandidates: a.maxCandidates ?? 20,
                     scope: a.scope,
                 });
+                let fixes = [];
+                if (a.fix === true) {
+                    if (!ctx.pipeline) {
+                        throw new PipelineError('PIPELINE_NOT_INITIALIZED', 'Pipeline not initialized');
+                    }
+                    const lintResult = (await ctx.pipeline.runLint());
+                    fixes = await applySafeFixes(ctx.vault, lintResult.data);
+                }
                 return {
                     content: [
                         {
                             type: 'text',
-                            text: JSON.stringify(result, null, 2),
+                            text: JSON.stringify({ ...scanResult, fixes }, null, 2),
                         },
                     ],
                 };

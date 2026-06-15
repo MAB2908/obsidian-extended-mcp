@@ -180,7 +180,7 @@ export const securityConfig = {
     /** Audit log format */
     auditFormat: env('AUDIT_FORMAT', yamlVal('security', 'auditFormat') ?? 'jsonl'),
     /** Audit log max age in days */
-    auditMaxAgeDays: envNumber('AUDIT_MAX_AGE_DAYS', yamlVal('security', 'auditMaxAgeDays') ?? 30),
+    auditMaxAgeDays: envNumber('AUDIT_MAX_AGE_DAYS', yamlVal('security', 'auditMaxAgeDays') ?? 90),
     /** Audit log batch size */
     auditBatchSize: envNumber('AUDIT_BATCH_SIZE', yamlVal('security', 'auditBatchSize') ?? 100),
     /** Audit log flush interval in milliseconds */
@@ -226,6 +226,8 @@ export const fsConfig = {
     maxBackups: envNumber('FS_MAX_BACKUPS', yamlVal('fs', 'maxBackups') ?? 20),
     /** Maximum note size in bytes (10 MB) */
     maxNoteSize: envNumber('FS_MAX_NOTE_SIZE', yamlVal('fs', 'maxNoteSize') ?? 10 * 1024 * 1024),
+    /** Create a backup before overwriting or patching existing notes */
+    backupBeforeWrite: envBool('FS_BACKUP_BEFORE_WRITE', yamlVal('fs', 'backupBeforeWrite') ?? true),
 };
 // ───────────────────────────────────────────
 // File Type Router Configuration
@@ -243,8 +245,9 @@ export function validateConfig() {
     if (serverConfig.authToken && serverConfig.authToken.length < 32) {
         throw new ConfigError('AUTH_TOKEN_TOO_SHORT', 'MCP_AUTH_TOKEN must be at least 32 characters when provided');
     }
-    if (semanticConfig.enabled && !llmConfig.openAiKey && llmConfig.ollamaBaseUrl === 'http://localhost:11434' && !process.env.OLLAMA_BASE_URL) {
-        throw new ConfigError('SEMANTIC_MISSING_PROVIDER', 'SEMANTIC_ENABLED=true requires OPENAI_API_KEY or OLLAMA_BASE_URL');
+    const hasOllamaProvider = llmConfig.ollamaBaseUrl !== 'http://localhost:11434' || !!process.env.OLLAMA_BASE_URL || !!process.env.OLLAMA_EMBED_BASE_URL;
+    if (semanticConfig.enabled && !llmConfig.openAiKey && !hasOllamaProvider) {
+        throw new ConfigError('SEMANTIC_MISSING_PROVIDER', 'SEMANTIC_ENABLED=true requires OPENAI_API_KEY or OLLAMA_BASE_URL or OLLAMA_EMBED_BASE_URL');
     }
     if (!['auto', 'interactive', 'strict'].includes(securityConfig.approvalMode)) {
         throw new ConfigError('INVALID_APPROVAL_MODE', `Invalid APPROVAL_MODE: ${securityConfig.approvalMode}. Must be auto, interactive, or strict`);

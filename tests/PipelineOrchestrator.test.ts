@@ -9,6 +9,7 @@ import { LLMAdapter } from '../src/layers/L6-ai-core/LLMAdapter.js';
 import { MockLLMProvider } from './e2e/mock-llm.js';
 import { generateSyntheticVault, cleanupVault } from './performance/synthetic.js';
 import { promises as fs } from 'fs';
+import path from 'path';
 
 describe('PipelineOrchestrator', () => {
   it('runCompile rolls back written concepts on partial failure (C3)', async () => {
@@ -66,4 +67,98 @@ describe('PipelineOrchestrator', () => {
     semanticDb.close();
     await cleanupVault(vaultPath);
   }, 10000);
+
+  it('runLink replaces all occurrences and skips text inside existing wikilinks', async () => {
+    const vaultPath = `./tests/.pipeline-link-${Date.now()}`;
+    await fs.mkdir(vaultPath, { recursive: true });
+
+    const vault = new VaultManager(vaultPath);
+    await vault.writeNote('target.md', '# Target\ncontent');
+    await vault.writeNote(
+      'source.md',
+      'Mention Target here and Target again. Also see [[Target|alias]] and [[Other]].'
+    );
+
+    const graph = new GraphEngine();
+    const semanticDb = new SemanticDatabase(vaultPath);
+    await semanticDb.initSchema();
+    const indexer = new BackgroundIndexer(vault, graph, undefined, undefined, semanticDb);
+    const adapter = new LLMAdapter('mock');
+    adapter.registerProvider(new MockLLMProvider());
+    const pipeline = new PipelineOrchestrator(vault, graph, semanticDb, indexer, adapter);
+
+    pipeline['linkAgent'].execute = async () => ({
+      data: {
+        suggestions: [{ phrase: 'Target', target: 'Target', confidence: 0.9 }],
+      },
+      confidence: 0.9,
+      reasoning: 'mock',
+    }) as any;
+
+    await pipeline.runLink('source.md');
+    const note = await vault.readNote('source.md');
+    expect(note.content).toBe(
+      'Mention [[Target|Target]] here and [[Target|Target]] again. Also see [[Target|alias]] and [[Other]].'
+    );
+
+    semanticDb.close();
+    await fs.rm(vaultPath, { recursive: true, force: true });
+  });
+
+  it('runLint detects invalid tags from meta/ontology.md', async () => {
+    const vaultPath = `./tests/.pipeline-lint-${Date.now()}`;
+    await fs.mkdir(path.join(vaultPath, 'meta'), { recursive: true });
+
+    const vault = new VaultManager(vaultPath);
+    await vault.writeNote('meta/ontology.md', '# Ontology\n\n- #concept\n- #source');
+    await vault.writeNote('note.md', '# Note\n', { frontmatter: { tags: ['concept', 'bad-tag'] } });
+
+    const graph = new GraphEngine();
+    const semanticDb = new SemanticDatabase(vaultPath);
+    await semanticDb.initSchema();
+    const indexer = new BackgroundIndexer(vault, graph, undefined, undefined, semanticDb);
+    const adapter = new LLMAdapter('mock');
+    adapter.registerProvider(new MockLLMProvider());
+    const pipeline = new PipelineOrchestrator(vault, graph, semanticDb, indexer, adapter);
+
+    pipeline['lintAgent'].execute = async (input: any) => ({
+      data: {},
+      confidence: 0.9,
+      reasoning: 'mock',
+    }) as any;
+
+    const result = (await pipeline.runLint()) as { data: { invalidTags: Array<{ tag: string; file: string }> } };
+    expect(result.data.invalidTags).toEqual([{ tag: 'bad-tag', file: 'note.md' }]);
+
+    semanticDb.close();
+    await fs.rm(vaultPath, { recursive: true, force: true });
+  });
+
+  it('runLint skips invalidTags check when no ontology exists', async () => {
+    const vaultPath = `./tests/.pipeline-lint-none-${Date.now()}`;
+    await fs.mkdir(vaultPath, { recursive: true });
+
+    const vault = new VaultManager(vaultPath);
+    await vault.writeNote('note.md', '# Note\n', { frontmatter: { tags: ['anything'] } });
+
+    const graph = new GraphEngine();
+    const semanticDb = new SemanticDatabase(vaultPath);
+    await semanticDb.initSchema();
+    const indexer = new BackgroundIndexer(vault, graph, undefined, undefined, semanticDb);
+    const adapter = new LLMAdapter('mock');
+    adapter.registerProvider(new MockLLMProvider());
+    const pipeline = new PipelineOrchestrator(vault, graph, semanticDb, indexer, adapter);
+
+    pipeline['lintAgent'].execute = async (input: any) => ({
+      data: {},
+      confidence: 0.9,
+      reasoning: 'mock',
+    }) as any;
+
+    const result = (await pipeline.runLint()) as { data: { invalidTags: Array<{ tag: string; file: string }> } };
+    expect(result.data.invalidTags).toEqual([]);
+
+    semanticDb.close();
+    await fs.rm(vaultPath, { recursive: true, force: true });
+  });
 });

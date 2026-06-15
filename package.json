@@ -1,6 +1,6 @@
 {
   "name": "obsidian-extended-mcp",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "AI-first Knowledge Base Server integrating Obsidian with MCP clients",
   "type": "module",
   "main": "dist/index.js",

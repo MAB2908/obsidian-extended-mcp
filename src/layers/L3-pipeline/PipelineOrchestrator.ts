@@ -1,11 +1,14 @@
 // v0.2b:
 import { promises as fs } from 'fs';
+import path from 'path';
 import type { IVaultManager } from '../../shared/interfaces/IVaultManager.js';
 import type { IGraphEngine } from '../../shared/interfaces/IGraphEngine.js';
 import type { ISemanticDatabase } from '../../shared/interfaces/ISemanticDatabase.js';
 import type { IBackgroundIndexer } from '../../shared/interfaces/IBackgroundIndexer.js';
 import type { IPipelineOrchestrator } from '../../shared/interfaces/IPipelineOrchestrator.js';
 import type { LLMAdapter } from '../L6-ai-core/LLMAdapter.js';
+import type { QueryOutput } from '../L6-ai-core/agents/index.js';
+import type { AIResult } from '../../shared/types.js';
 import { pipelineConfig } from '../../shared/config.js';
 import { PipelineMetrics } from './PipelineMetrics.js';
 import {
@@ -94,7 +97,26 @@ export class PipelineOrchestrator implements IPipelineOrchestrator {
           return { path: r.path, title: note.title, snippet: r.snippet || note.content.slice(0, 500) };
         })
       );
-      const result = await this.queryAgent.execute({ question, contextNotes });
+      const result = (await this.queryAgent.execute({ question, contextNotes })) as AIResult<QueryOutput>;
+
+      // Save ai_query session to sessions/ for continuity and auditability
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const sessionPath = `sessions/${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}-query.md`;
+      const answer = result.data?.answer ?? JSON.stringify(result.data);
+      const sessionContent = `# Query Session\n\n## Question\n\n${question}\n\n## Answer\n\n${answer}\n`;
+      try {
+        await this.vault.writeNote(sessionPath, sessionContent, {
+          frontmatter: {
+            title: `Query: ${question}`,
+            tags: ['session'],
+            date: now.toISOString(),
+          },
+        });
+      } catch (sessionErr) {
+        console.error('[PipelineOrchestrator] Failed to save query session:', sessionErr);
+      }
+
       return result;
     }, { itemsIn: 1, itemsOut: 1 });
   }
@@ -264,7 +286,7 @@ export class PipelineOrchestrator implements IPipelineOrchestrator {
       let updated = note.content;
       for (const s of result.data.suggestions) {
         if (s.confidence >= pipelineConfig.minConfidence) {
-          updated = updated.replace(s.phrase, `[[${s.target}|${s.phrase}]]`);
+          updated = this.replacePhraseGlobal(updated, s.phrase, s.target);
         }
       }
       if (updated !== note.content) {
@@ -327,7 +349,7 @@ export class PipelineOrchestrator implements IPipelineOrchestrator {
           let added = 0;
           for (const s of result.data.suggestions) {
             if (s.confidence >= pipelineConfig.minConfidence) {
-              updated = updated.replace(s.phrase, `[[${s.target}|${s.phrase}]]`);
+              updated = this.replacePhraseGlobal(updated, s.phrase, s.target);
               added++;
             }
           }
@@ -364,53 +386,61 @@ export class PipelineOrchestrator implements IPipelineOrchestrator {
     return this.metrics.measure('lint', async () => {
       const graph = this.graph.getGraph();
       const allTags = await this.vault.listAllTags();
+      const curatedOntology = await this.loadOntologyTags();
+      const ontologyForLint = curatedOntology.length > 0 ? curatedOntology : Object.keys(allTags);
 
-    // Find old seedlings (status: seedling > 90 days)
-    const oldSeedlings: string[] = [];
-    const invalidTags: Array<{ tag: string; file: string }> = [];
-    const staleMocs: string[] = [];
-    const titleMap = new Map<string, string[]>();
-    const ontologyTags = new Set(Object.keys(allTags));
-    const mocAgeDays = pipelineConfig.mocAgeDays;
+      // Find old seedlings (status: seedling > 90 days)
+      const oldSeedlings: string[] = [];
+      const invalidTags: Array<{ tag: string; file: string }> = [];
+      const staleMocs: string[] = [];
+      const titleMap = new Map<string, string[]>();
+      const allowedTagSet = curatedOntology.length > 0 ? new Set(curatedOntology) : undefined;
+      const mocAgeDays = pipelineConfig.mocAgeDays;
 
-    for await (const n of this.iterateAllNotes()) {
-      if (n.frontmatter.status === 'seedling' && n.created) {
-        const days = (Date.now() - n.created.getTime()) / (1000 * 60 * 60 * 24);
-        if (days > pipelineConfig.seedlingMaxAgeDays) oldSeedlings.push(n.path);
-      }
-      for (const t of n.tags) {
-        if (!ontologyTags.has(t)) invalidTags.push({ tag: t, file: n.path });
-      }
-      const isMoc = n.path.startsWith('index/') || n.path.startsWith('moc/') || n.tags.includes('moc');
-      if (isMoc) {
-        try {
-          const fullPath = await this.vault.resolvePath(n.path);
-          const stat = await fs.stat(fullPath);
-          const daysSinceMod = (Date.now() - stat.mtime.getTime()) / (1000 * 60 * 60 * 24);
-          if (daysSinceMod > mocAgeDays) staleMocs.push(n.path);
-        } catch (err) {
-          console.error(`[PipelineOrchestrator] Failed to stat MOC ${n.path}:`, err);
+      for await (const n of this.iterateAllNotes()) {
+        if (n.frontmatter.status === 'seedling' && n.created) {
+          const days = (Date.now() - n.created.getTime()) / (1000 * 60 * 60 * 24);
+          if (days > pipelineConfig.seedlingMaxAgeDays) oldSeedlings.push(n.path);
         }
+        if (allowedTagSet) {
+          for (const t of n.tags) {
+            if (!allowedTagSet.has(t)) invalidTags.push({ tag: t, file: n.path });
+          }
+        }
+        const isMoc = n.path.startsWith('index/') || n.path.startsWith('moc/') || n.tags.includes('moc');
+        if (isMoc) {
+          try {
+            const fullPath = await this.vault.resolvePath(n.path);
+            const stat = await fs.stat(fullPath);
+            const daysSinceMod = (Date.now() - stat.mtime.getTime()) / (1000 * 60 * 60 * 24);
+            if (daysSinceMod > mocAgeDays) staleMocs.push(n.path);
+          } catch (err) {
+            console.error(`[PipelineOrchestrator] Failed to stat MOC ${n.path}:`, err);
+          }
+        }
+        const list = titleMap.get(n.title) || [];
+        list.push(n.path);
+        titleMap.set(n.title, list);
       }
-      const list = titleMap.get(n.title) || [];
-      list.push(n.path);
-      titleMap.set(n.title, list);
-    }
 
-    const duplicateTitles = Array.from(titleMap.entries())
-      .filter(([, paths]) => paths.length > 1)
-      .map(([title, paths]) => ({ title, paths }));
+      const duplicateTitles = Array.from(titleMap.entries())
+        .filter(([, paths]) => paths.length > 1)
+        .map(([title, paths]) => ({ title, paths }));
 
-    const result = await this.lintAgent.execute({
-      orphans: graph.orphans,
-      deadends: graph.deadends,
-      unresolved: graph.unresolved,
-      staleMocs,
-      oldSeedlings,
-      duplicateTitles,
-      invalidTags,
-      ontology: Object.keys(allTags),
-    });
+      const result = await this.lintAgent.execute({
+        orphans: graph.orphans,
+        deadends: graph.deadends,
+        unresolved: graph.unresolved,
+        staleMocs,
+        oldSeedlings,
+        duplicateTitles,
+        invalidTags,
+        ontology: ontologyForLint,
+      });
+
+      // Expose deterministic findings so tools can apply safe fixes
+      result.data.invalidTags = invalidTags;
+      result.data.oldSeedlings = oldSeedlings;
 
       return result;
     }, { itemsIn: 1, itemsOut: 1 });
@@ -437,6 +467,30 @@ export class PipelineOrchestrator implements IPipelineOrchestrator {
       this.indexer.markDirty(relPath);
       return result;
     }, { itemsIn: 1, itemsOut: 1 });
+  }
+
+  private replacePhraseGlobal(content: string, phrase: string, target: string): string {
+    if (!phrase) return content;
+    const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\[\\[([^\\]]+)\\]\\]|(${escaped})`, 'g');
+    return content.replace(regex, (match, link: string | undefined, phraseMatch: string | undefined) => {
+      if (link !== undefined) return match;
+      return `[[${target}|${phraseMatch}]]`;
+    });
+  }
+
+  private async loadOntologyTags(): Promise<string[]> {
+    const fromVault = (this.vault as any).getOntologyTags?.();
+    if (fromVault && fromVault.length > 0) {
+      return fromVault;
+    }
+    try {
+      const raw = await fs.readFile(path.join(this.vault.root, 'meta/ontology.md'), 'utf-8');
+      const tags = [...raw.matchAll(/(?:^|\s)#([a-zA-Z0-9_\-/]+)/g)].map((m) => m[1]);
+      return [...new Set(tags)];
+    } catch {
+      return [];
+    }
   }
 
   private async *iterateAllNotes(): AsyncGenerator<{ path: string; title: string; content: string; tags: string[]; frontmatter: Record<string, unknown>; created?: Date }> {

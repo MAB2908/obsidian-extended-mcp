@@ -27,6 +27,8 @@ export declare class PipelineOrchestrator implements IPipelineOrchestrator {
     runLinkBatch(limit?: number, folder?: string): Promise<unknown>;
     runLint(): Promise<unknown>;
     runEnrich(relPath: string): Promise<unknown>;
+    private replacePhraseGlobal;
+    private loadOntologyTags;
     private iterateAllNotes;
 }
 //# sourceMappingURL=PipelineOrchestrator.d.ts.map
