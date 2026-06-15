@@ -231,7 +231,14 @@ export interface ILayer2CliBridge {
 export interface ILayer2bRestBridge {
   isAvailable(): Promise<boolean>;
   activeNote(): Promise<Note | null>;
+  activeNoteContent(): Promise<string>;
   executeDataview(query: string): Promise<unknown>;
+  getNote(path: string): Promise<{ path: string; content: string; frontmatter: Record<string, unknown> }>;
+  writeNote(path: string, content: string): Promise<void>;
+  deleteNote(path: string): Promise<void>;
+  listTags(): Promise<string[]>;
+  executeCommand(commandId: string): Promise<void>;
+  search(query: string): Promise<Array<{ path: string; score: number }>>;
 }
 
 // ───────────────────────────────────────────

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// v0.3.3:
+// v0.3.4:
 // Load .env with override BEFORE any config imports (ESM hoisting safety)
 import './shared/load-env.js';
 
@@ -62,6 +62,7 @@ import {
   validateConfig,
   autoDreamingConfig,
 } from './shared/config.js';
+import { HttpMcpTransport } from './transports/HttpMcpTransport.js';
 
 async function main() {
   // Validate centralized config first
@@ -296,62 +297,89 @@ async function main() {
     }
   }
 
-  const server = new Server(
-    { name: 'obsidian-extended-mcp', version: '0.3.3' },
-    { capabilities: { tools: {} } }
-  );
-
-  server.setRequestHandler(ListToolsRequestSchema, async () => {
-    return {
-      tools: dispatcher.listTools().map((t) => ({
-        name: t.name,
-        description: t.description,
-        inputSchema: t.inputSchema as Record<string, unknown>,
-      })),
-    };
-  });
-
-  // Serialize tool calls so that write→read operations in the same session
-  // are processed in order. The MCP SDK may dispatch requests concurrently.
-  let toolQueue: Promise<CallToolResult> = Promise.resolve({ content: [] });
-  server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    return toolQueue = toolQueue.then(async () => {
-      const { name, arguments: args } = request.params;
-      try {
-        const auth = security.authorize(name, args as Record<string, unknown>);
-        if (!auth.allowed) {
-          audit.log({ event: 'security', tool: name, reason: auth.reason, blocked: true, vaultPath: (args as Record<string, unknown>)?.vaultPath as string | undefined });
-          return { content: [{ type: 'text', text: `Security blocked: ${auth.reason}` }], isError: true };
-        }
-        const result = await dispatcher.call(name, args);
-        return result as CallToolResult;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        audit.log({ event: 'error', tool: name, message, blocked: false });
-        return { content: [{ type: 'text', text: `Error: ${message}` }], isError: true };
-      }
-    });
-  });
-
-  const transport = new StdioServerTransport();
-  let authWrapper: AuthTransportWrapper | undefined;
-  // Wire transport token verification for stdio transport
-  if (serverConfig.authToken) {
-    authWrapper = new AuthTransportWrapper(
-      transport,
-      (token) => security.verifyToken(token),
-      (reason, token) => {
-        audit.log({ event: 'security', tool: 'transport_auth', reason, blocked: true, message: token ? '***redacted***' : undefined });
-      }
+  function createMcpServer(): Server {
+    const srv = new Server(
+      { name: 'obsidian-extended-mcp', version: '0.3.4' },
+      { capabilities: { tools: {} } }
     );
-    authWrapper.wrap();
+
+    srv.setRequestHandler(ListToolsRequestSchema, async () => {
+      return {
+        tools: dispatcher.listTools().map((t) => ({
+          name: t.name,
+          description: t.description,
+          inputSchema: t.inputSchema as Record<string, unknown>,
+        })),
+      };
+    });
+
+    // Serialize tool calls so that write→read operations in the same session
+    // are processed in order. The MCP SDK may dispatch requests concurrently.
+    let toolQueue: Promise<CallToolResult> = Promise.resolve({ content: [] });
+    srv.setRequestHandler(CallToolRequestSchema, async (request) => {
+      return toolQueue = toolQueue.then(async () => {
+        const { name, arguments: args } = request.params;
+        try {
+          const auth = security.authorize(name, args as Record<string, unknown>);
+          if (!auth.allowed) {
+            audit.log({ event: 'security', tool: name, reason: auth.reason, blocked: true, vaultPath: (args as Record<string, unknown>)?.vaultPath as string | undefined });
+            return { content: [{ type: 'text', text: `Security blocked: ${auth.reason}` }], isError: true };
+          }
+          const result = await dispatcher.call(name, args);
+          return result as CallToolResult;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          audit.log({ event: 'error', tool: name, message, blocked: false });
+          return { content: [{ type: 'text', text: `Error: ${message}` }], isError: true };
+        }
+      });
+    });
+
+    return srv;
   }
-  await server.connect(transport);
-  console.error('Obsidian Extended MCP server running on stdio');
+
+  const server = createMcpServer();
+
+  let httpTransport: HttpMcpTransport | undefined;
+  let stdioTransport: StdioServerTransport | undefined;
+  let authWrapper: AuthTransportWrapper | undefined;
+
+  // Start Streamable HTTP transport when enabled
+  if (serverConfig.httpEnabled) {
+    httpTransport = new HttpMcpTransport({
+      host: serverConfig.httpHost,
+      port: serverConfig.httpPort,
+      path: serverConfig.httpPath,
+      authToken: serverConfig.authToken,
+      corsOrigins: serverConfig.httpCorsOrigins,
+      version: '0.3.4',
+      createServer: createMcpServer,
+    });
+    await httpTransport.start();
+  }
+
+  // Keep stdio as the default unless explicitly disabled
+  if (!serverConfig.stdioDisabled) {
+    stdioTransport = new StdioServerTransport();
+    // Wire transport token verification for stdio transport
+    if (serverConfig.authToken) {
+      authWrapper = new AuthTransportWrapper(
+        stdioTransport,
+        (token) => security.verifyToken(token),
+        (reason, token) => {
+          audit.log({ event: 'security', tool: 'transport_auth', reason, blocked: true, message: token ? '***redacted***' : undefined });
+        }
+      );
+      authWrapper.wrap();
+    }
+    await server.connect(stdioTransport);
+    console.error('Obsidian Extended MCP server running on stdio');
+  }
 
   async function shutdown(signal: string) {
     console.error(`Received ${signal}, shutting down gracefully...`);
     try {
+      await httpTransport?.close();
       await audit.flush();
       await pool.shutdown();
       authWrapper?.unwrap();

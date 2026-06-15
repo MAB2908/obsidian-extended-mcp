@@ -80,6 +80,15 @@ export declare class RestError extends McpError {
 export declare class RestQueryError extends RestError {
     constructor(query: string, details?: string);
 }
+export declare class RestNotFoundError extends RestError {
+    constructor(path: string);
+}
+export declare class RestAuthError extends RestError {
+    constructor(details?: string);
+}
+export declare class RestTimeoutError extends RestError {
+    constructor(timeoutMs: number);
+}
 export declare class PipelineError extends McpError {
     constructor(code: string, message: string, options?: Partial<Omit<ConstructorParameters<typeof McpError>[0], 'code' | 'layer' | 'message'>>);
 }

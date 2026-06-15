@@ -1,4 +1,4 @@
-# Obsidian Extended MCP v0.3.3
+# Obsidian Extended MCP v0.3.4
 
 AI-first Knowledge Base Server integrating Obsidian with MCP clients.
 

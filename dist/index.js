@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// v0.3.3:
+// v0.3.4:
 // Load .env with override BEFORE any config imports (ESM hoisting safety)
 import './shared/load-env.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -46,6 +46,7 @@ import { createBridgeTools } from './tools/bridge.js';
 import { createBackupTools } from './tools/backup.js';
 import { ModelAwareBackupService } from './shared/ModelAwareBackupService.js';
 import { serverConfig, llmConfig, semanticConfig, securityConfig, bridgeConfig, validateConfig, autoDreamingConfig, } from './shared/config.js';
+import { HttpMcpTransport } from './transports/HttpMcpTransport.js';
 async function main() {
     // Validate centralized config first
     validateConfig();
@@ -239,52 +240,75 @@ async function main() {
             }
         }
     }
-    const server = new Server({ name: 'obsidian-extended-mcp', version: '0.3.3' }, { capabilities: { tools: {} } });
-    server.setRequestHandler(ListToolsRequestSchema, async () => {
-        return {
-            tools: dispatcher.listTools().map((t) => ({
-                name: t.name,
-                description: t.description,
-                inputSchema: t.inputSchema,
-            })),
-        };
-    });
-    // Serialize tool calls so that write→read operations in the same session
-    // are processed in order. The MCP SDK may dispatch requests concurrently.
-    let toolQueue = Promise.resolve({ content: [] });
-    server.setRequestHandler(CallToolRequestSchema, async (request) => {
-        return toolQueue = toolQueue.then(async () => {
-            const { name, arguments: args } = request.params;
-            try {
-                const auth = security.authorize(name, args);
-                if (!auth.allowed) {
-                    audit.log({ event: 'security', tool: name, reason: auth.reason, blocked: true, vaultPath: args?.vaultPath });
-                    return { content: [{ type: 'text', text: `Security blocked: ${auth.reason}` }], isError: true };
+    function createMcpServer() {
+        const srv = new Server({ name: 'obsidian-extended-mcp', version: '0.3.4' }, { capabilities: { tools: {} } });
+        srv.setRequestHandler(ListToolsRequestSchema, async () => {
+            return {
+                tools: dispatcher.listTools().map((t) => ({
+                    name: t.name,
+                    description: t.description,
+                    inputSchema: t.inputSchema,
+                })),
+            };
+        });
+        // Serialize tool calls so that write→read operations in the same session
+        // are processed in order. The MCP SDK may dispatch requests concurrently.
+        let toolQueue = Promise.resolve({ content: [] });
+        srv.setRequestHandler(CallToolRequestSchema, async (request) => {
+            return toolQueue = toolQueue.then(async () => {
+                const { name, arguments: args } = request.params;
+                try {
+                    const auth = security.authorize(name, args);
+                    if (!auth.allowed) {
+                        audit.log({ event: 'security', tool: name, reason: auth.reason, blocked: true, vaultPath: args?.vaultPath });
+                        return { content: [{ type: 'text', text: `Security blocked: ${auth.reason}` }], isError: true };
+                    }
+                    const result = await dispatcher.call(name, args);
+                    return result;
                 }
-                const result = await dispatcher.call(name, args);
-                return result;
-            }
-            catch (err) {
-                const message = err instanceof Error ? err.message : String(err);
-                audit.log({ event: 'error', tool: name, message, blocked: false });
-                return { content: [{ type: 'text', text: `Error: ${message}` }], isError: true };
-            }
+                catch (err) {
+                    const message = err instanceof Error ? err.message : String(err);
+                    audit.log({ event: 'error', tool: name, message, blocked: false });
+                    return { content: [{ type: 'text', text: `Error: ${message}` }], isError: true };
+                }
+            });
         });
-    });
-    const transport = new StdioServerTransport();
-    let authWrapper;
-    // Wire transport token verification for stdio transport
-    if (serverConfig.authToken) {
-        authWrapper = new AuthTransportWrapper(transport, (token) => security.verifyToken(token), (reason, token) => {
-            audit.log({ event: 'security', tool: 'transport_auth', reason, blocked: true, message: token ? '***redacted***' : undefined });
-        });
-        authWrapper.wrap();
+        return srv;
     }
-    await server.connect(transport);
-    console.error('Obsidian Extended MCP server running on stdio');
+    const server = createMcpServer();
+    let httpTransport;
+    let stdioTransport;
+    let authWrapper;
+    // Start Streamable HTTP transport when enabled
+    if (serverConfig.httpEnabled) {
+        httpTransport = new HttpMcpTransport({
+            host: serverConfig.httpHost,
+            port: serverConfig.httpPort,
+            path: serverConfig.httpPath,
+            authToken: serverConfig.authToken,
+            corsOrigins: serverConfig.httpCorsOrigins,
+            version: '0.3.4',
+            createServer: createMcpServer,
+        });
+        await httpTransport.start();
+    }
+    // Keep stdio as the default unless explicitly disabled
+    if (!serverConfig.stdioDisabled) {
+        stdioTransport = new StdioServerTransport();
+        // Wire transport token verification for stdio transport
+        if (serverConfig.authToken) {
+            authWrapper = new AuthTransportWrapper(stdioTransport, (token) => security.verifyToken(token), (reason, token) => {
+                audit.log({ event: 'security', tool: 'transport_auth', reason, blocked: true, message: token ? '***redacted***' : undefined });
+            });
+            authWrapper.wrap();
+        }
+        await server.connect(stdioTransport);
+        console.error('Obsidian Extended MCP server running on stdio');
+    }
     async function shutdown(signal) {
         console.error(`Received ${signal}, shutting down gracefully...`);
         try {
+            await httpTransport?.close();
             await audit.flush();
             await pool.shutdown();
             authWrapper?.unwrap();

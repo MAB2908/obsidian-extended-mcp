@@ -20,6 +20,69 @@ export function createSecurityTools(resolveVault, audit, security) {
             },
         },
         {
+            name: 'audit_remote_status',
+            description: 'Get status of the remote audit sink',
+            inputSchema: { type: 'object', properties: {} },
+            handler: async () => {
+                if (!securityConfig.enableAudit) {
+                    return {
+                        content: [{ type: 'text', text: 'audit_remote_status is disabled. Set ENABLE_AUDIT=true to enable.' }],
+                        isError: true,
+                    };
+                }
+                const status = audit.getRemoteStatus();
+                return { content: [{ type: 'text', text: JSON.stringify(status, null, 2) }] };
+            },
+        },
+        {
+            name: 'audit_purge',
+            description: 'Rotate audit logs by age or purge entries by GDPR criteria',
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    mode: { type: 'string', enum: ['age', 'gdpr'] },
+                    criteria: {
+                        type: 'object',
+                        description: 'GDPR criteria: sessionId, path, before, after, operation',
+                        properties: {
+                            sessionId: { type: 'string' },
+                            path: { type: 'string' },
+                            before: { type: 'string' },
+                            after: { type: 'string' },
+                            operation: { type: 'string' },
+                        },
+                    },
+                },
+                required: ['mode'],
+            },
+            handler: async (args) => {
+                if (!securityConfig.enableAudit || !securityConfig.enableDelete) {
+                    return {
+                        content: [{ type: 'text', text: 'audit_purge is disabled. Set ENABLE_AUDIT=true and ENABLE_DELETE=true to enable.' }],
+                        isError: true,
+                    };
+                }
+                const { mode, criteria } = args;
+                try {
+                    if (mode === 'age') {
+                        const removed = await audit.rotateByAge();
+                        return { content: [{ type: 'text', text: `Age-based rotation removed ${removed} entries.` }] };
+                    }
+                    if (mode === 'gdpr') {
+                        const removed = await audit.gdprPurge(criteria ?? {});
+                        return { content: [{ type: 'text', text: `GDPR purge removed ${removed} entries.` }] };
+                    }
+                    return { content: [{ type: 'text', text: `Invalid mode: ${mode}` }], isError: true };
+                }
+                catch (err) {
+                    return {
+                        content: [{ type: 'text', text: `audit_purge failed: ${err instanceof Error ? err.message : String(err)}` }],
+                        isError: true,
+                    };
+                }
+            },
+        },
+        {
             name: 'list_backups',
             description: 'List available backups of vault notes',
             inputSchema: { type: 'object', properties: { vaultPath: { type: 'string', description: 'Optional vault path (multi-vault mode)' } } },

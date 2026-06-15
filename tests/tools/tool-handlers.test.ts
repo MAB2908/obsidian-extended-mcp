@@ -7,6 +7,7 @@ import { createFilesystemTools } from '../../src/tools/filesystem.js';
 import { createSemanticTools } from '../../src/tools/semantic.js';
 import { createDreamingTools } from '../../src/tools/dreaming.js';
 import { createCliTools } from '../../src/tools/cli.js';
+import { createRestTools } from '../../src/tools/rest.js';
 
 describe('Tool handlers', () => {
   describe('bridge', () => {
@@ -35,11 +36,24 @@ describe('Tool handlers', () => {
       expect((result as any).content[0].text).toContain('x');
     });
 
+    it('audit_remote_status returns logger remote status', async () => {
+      const audit = { getRemoteStatus: vi.fn().mockReturnValue({ configured: true, url: 'http://x', pendingFailures: 5, lastError: 'err' }) } as any;
+      const tools = createSecurityTools(vi.fn(), audit, null as any);
+      const statusTool = tools.find((t) => t.name === 'audit_remote_status');
+      expect(statusTool).toBeDefined();
+      const result = await statusTool!.handler({});
+      expect(audit.getRemoteStatus).toHaveBeenCalled();
+      expect((result as any).content[0].text).toContain('http://x');
+      expect((result as any).content[0].text).toContain('pendingFailures');
+    });
+
     it('rollback calls vault.rollback with exact args', async () => {
       const ctx = { vault: { rollback: vi.fn().mockResolvedValue(undefined) }, vaultPath: '/v' };
       const resolve = vi.fn().mockReturnValue(ctx);
       const tools = createSecurityTools(resolve, null as any, null as any);
-      const result = await tools[2].handler({ path: 'n.md', timestamp: 't1' });
+      const rollbackTool = tools.find((t) => t.name === 'rollback');
+      expect(rollbackTool).toBeDefined();
+      const result = await rollbackTool!.handler({ path: 'n.md', timestamp: 't1' });
       expect(ctx.vault.rollback).toHaveBeenCalledWith('n.md', 't1');
       expect((result as any).content[0].text).toBe('Rolled back n.md');
     });
@@ -50,7 +64,9 @@ describe('Tool handlers', () => {
       const security = { authorize: vi.fn().mockReturnValue({ allowed: false, reason: 'Blocked' }) };
       const audit = { log: vi.fn() } as any;
       const tools = createSecurityTools(resolve, audit, security as any);
-      const result = await tools[3].handler({ filter: {}, operation: 'replace', target: 'x' });
+      const batchEditTool = tools.find((t) => t.name === 'batch_edit');
+      expect(batchEditTool).toBeDefined();
+      const result = await batchEditTool!.handler({ filter: {}, operation: 'replace', target: 'x' });
       expect((result as any).isError).toBe(true);
       expect((result as any).content[0].text).toContain('Blocked');
     });
@@ -66,7 +82,9 @@ describe('Tool handlers', () => {
       const security = { authorize: vi.fn().mockReturnValue({ allowed: true }) };
       const audit = { log: vi.fn() } as any;
       const tools = createSecurityTools(resolve, audit, security as any);
-      const result = await tools[3].handler({ filter: { folder: 'notes' }, operation: 'replace', target: 'x', replacement: 'y', preview: true });
+      const batchEditTool = tools.find((t) => t.name === 'batch_edit');
+      expect(batchEditTool).toBeDefined();
+      const result = await batchEditTool!.handler({ filter: { folder: 'notes' }, operation: 'replace', target: 'x', replacement: 'y', preview: true });
       expect(security.authorize).toHaveBeenCalledWith('batch_edit', expect.any(Object));
       expect((result as any).content[0].text).toContain('previews');
     });
@@ -82,7 +100,9 @@ describe('Tool handlers', () => {
       const security = { authorize: vi.fn().mockReturnValue({ allowed: true }) };
       const audit = { log: vi.fn() } as any;
       const tools = createSecurityTools(resolve, audit, security as any);
-      const result = await tools[3].handler({ filter: {}, operation: 'replace', target: 'x', replacement: 'y' });
+      const batchEditTool = tools.find((t) => t.name === 'batch_edit');
+      expect(batchEditTool).toBeDefined();
+      const result = await batchEditTool!.handler({ filter: {}, operation: 'replace', target: 'x', replacement: 'y' });
       expect((result as any).content[0].text).toContain('modified');
       expect((result as any).content[0].text).toContain('2');
     });
@@ -277,6 +297,98 @@ describe('Tool handlers', () => {
       const result = await evalTool.handler({ code: 'while(true){}' });
       expect((result as any).isError).toBe(true);
       expect((result as any).content[0].text).toContain('Sandbox error: Timeout');
+    });
+  });
+
+  describe('rest', () => {
+    function makeRest() {
+      return {
+        isAvailable: vi.fn().mockResolvedValue(true),
+        activeNote: vi.fn().mockResolvedValue({ path: 'a.md', content: '# A' }),
+        executeDataview: vi.fn().mockResolvedValue({ values: [] }),
+        getNote: vi.fn().mockResolvedValue({ path: 'n.md', content: 'c', frontmatter: {} }),
+        writeNote: vi.fn().mockResolvedValue(undefined),
+        deleteNote: vi.fn().mockResolvedValue(undefined),
+        listTags: vi.fn().mockResolvedValue(['t1']),
+        executeCommand: vi.fn().mockResolvedValue(undefined),
+        search: vi.fn().mockResolvedValue([{ path: 'n.md', score: 1 }]),
+      };
+    }
+
+    it('rest_active_note returns active note', async () => {
+      const rest = makeRest();
+      const tools = createRestTools(rest as any);
+      const tool = tools.find((t) => t.name === 'rest_active_note');
+      expect(tool).toBeDefined();
+      const result = await tool!.handler({});
+      expect(rest.activeNote).toHaveBeenCalled();
+      expect((result as any).content[0].text).toContain('a.md');
+    });
+
+    it('rest_get_note calls getNote', async () => {
+      const rest = makeRest();
+      const tools = createRestTools(rest as any);
+      const tool = tools.find((t) => t.name === 'rest_get_note');
+      const result = await tool!.handler({ path: 'n.md' });
+      expect(rest.getNote).toHaveBeenCalledWith('n.md');
+      expect((result as any).content[0].text).toContain('n.md');
+    });
+
+    it('rest_write_note calls writeNote when enabled', async () => {
+      const rest = makeRest();
+      const tools = createRestTools(rest as any);
+      const tool = tools.find((t) => t.name === 'rest_write_note');
+      if (!tool) {
+        // filtered out when ENABLE_COMMANDS=false
+        return;
+      }
+      const result = await tool.handler({ path: 'n.md', content: '# Hello' });
+      expect(rest.writeNote).toHaveBeenCalledWith('n.md', '# Hello');
+      expect((result as any).content[0].text).toBe('Wrote n.md');
+    });
+
+    it('rest_delete_note calls deleteNote when enabled', async () => {
+      const rest = makeRest();
+      const tools = createRestTools(rest as any);
+      const tool = tools.find((t) => t.name === 'rest_delete_note');
+      if (!tool) {
+        // filtered out when ENABLE_COMMANDS=false
+        return;
+      }
+      const result = await tool.handler({ path: 'n.md' });
+      expect(rest.deleteNote).toHaveBeenCalledWith('n.md');
+      expect((result as any).content[0].text).toBe('Deleted n.md');
+    });
+
+    it('rest_list_tags calls listTags', async () => {
+      const rest = makeRest();
+      const tools = createRestTools(rest as any);
+      const tool = tools.find((t) => t.name === 'rest_list_tags');
+      const result = await tool!.handler({});
+      expect(rest.listTags).toHaveBeenCalled();
+      expect((result as any).content[0].text).toContain('t1');
+    });
+
+    it('rest_execute_command calls executeCommand when enabled', async () => {
+      const rest = makeRest();
+      const tools = createRestTools(rest as any);
+      const tool = tools.find((t) => t.name === 'rest_execute_command');
+      if (!tool) {
+        // filtered out when ENABLE_COMMANDS=false
+        return;
+      }
+      const result = await tool.handler({ commandId: 'app:reload' });
+      expect(rest.executeCommand).toHaveBeenCalledWith('app:reload');
+      expect((result as any).content[0].text).toContain('app:reload');
+    });
+
+    it('rest_search calls search', async () => {
+      const rest = makeRest();
+      const tools = createRestTools(rest as any);
+      const tool = tools.find((t) => t.name === 'rest_search');
+      const result = await tool!.handler({ query: 'foo' });
+      expect(rest.search).toHaveBeenCalledWith('foo');
+      expect((result as any).content[0].text).toContain('n.md');
     });
   });
 });

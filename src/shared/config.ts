@@ -86,6 +86,24 @@ export const serverConfig = {
 
   /** Enforce ontology rules on writes */
   enforceOntology: envBool('ENFORCE_ONTOLOGY', yamlVal('server', 'enforceOntology') ?? false),
+
+  /** Enable Streamable HTTP transport */
+  httpEnabled: envBool('MCP_HTTP_ENABLED', yamlVal('server', 'httpEnabled') ?? false),
+
+  /** HTTP transport bind host */
+  httpHost: env('MCP_HTTP_HOST', yamlVal('server', 'httpHost') ?? '127.0.0.1'),
+
+  /** HTTP transport port */
+  httpPort: envNumber('MCP_HTTP_PORT', yamlVal('server', 'httpPort') ?? 8787),
+
+  /** HTTP transport MCP endpoint path */
+  httpPath: env('MCP_HTTP_PATH', yamlVal('server', 'httpPath') ?? '/mcp'),
+
+  /** Allowed CORS origins (empty disables CORS) */
+  httpCorsOrigins: envList('MCP_HTTP_CORS_ORIGINS', yamlVal<string[]>('server', 'httpCorsOrigins') ?? []),
+
+  /** Disable stdio transport when HTTP is enabled */
+  stdioDisabled: envBool('MCP_STDIO_DISABLED', yamlVal('server', 'stdioDisabled') ?? false),
 } as const;
 
 // ───────────────────────────────────────────
@@ -209,8 +227,11 @@ export const securityConfig = {
   /** Enable batch_edit */
   enableBatchEdit: envBool('ENABLE_BATCH_EDIT', yamlVal('security', 'enableBatchEdit') ?? false),
 
-  /** Enable delete_note */
+  /** Enable delete_note and audit purge */
   enableDelete: envBool('ENABLE_DELETE', yamlVal('security', 'enableDelete') ?? false),
+
+  /** Enable audit logging and audit purge tool */
+  enableAudit: envBool('ENABLE_AUDIT', yamlVal('security', 'enableAudit') ?? true),
 
   /** Safe zones (writable without confirmation) */
   safeZones: envList('SAFE_ZONES', yamlVal<string[]>('security', 'safeZones') ?? ['raw/', 'sessions/']),
@@ -244,6 +265,21 @@ export const securityConfig = {
 
   /** Audit log max in-memory buffer size (entries) */
   auditMaxBufferSize: envNumber('AUDIT_MAX_BUFFER_SIZE', yamlVal('security', 'auditMaxBufferSize') ?? 10000),
+
+  /** Remote audit sink URL */
+  auditRemoteUrl: env('AUDIT_REMOTE_URL', yamlVal('security', 'auditRemoteUrl') ?? ''),
+
+  /** Remote audit sink bearer token */
+  auditRemoteToken: env('AUDIT_REMOTE_TOKEN', yamlVal('security', 'auditRemoteToken') ?? ''),
+
+  /** Remote audit sink batch size */
+  auditRemoteBatchSize: envNumber('AUDIT_REMOTE_BATCH_SIZE', yamlVal('security', 'auditRemoteBatchSize') ?? 50),
+
+  /** Remote audit sink request timeout in milliseconds */
+  auditRemoteTimeoutMs: envNumber('AUDIT_REMOTE_TIMEOUT_MS', yamlVal('security', 'auditRemoteTimeoutMs') ?? 5000),
+
+  /** Remote audit sink retry attempts */
+  auditRemoteRetryAttempts: envNumber('AUDIT_REMOTE_RETRY_ATTEMPTS', yamlVal('security', 'auditRemoteRetryAttempts') ?? 3),
 } as const;
 
 // ───────────────────────────────────────────
@@ -313,6 +349,9 @@ export const fileTypeConfig = {
 export function validateConfig(): void {
   if (serverConfig.authToken && serverConfig.authToken.length < 32) {
     throw new ConfigError('AUTH_TOKEN_TOO_SHORT', 'MCP_AUTH_TOKEN must be at least 32 characters when provided');
+  }
+  if (serverConfig.httpEnabled && !serverConfig.authToken) {
+    throw new ConfigError('HTTP_AUTH_REQUIRED', 'MCP_HTTP_ENABLED requires MCP_AUTH_TOKEN to be set');
   }
   const hasOllamaProvider = llmConfig.ollamaBaseUrl !== 'http://localhost:11434' || !!process.env.OLLAMA_BASE_URL || !!process.env.OLLAMA_EMBED_BASE_URL;
   if (semanticConfig.enabled && !llmConfig.openAiKey && !hasOllamaProvider) {

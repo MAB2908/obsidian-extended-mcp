@@ -1,0 +1,53 @@
+name: Feature Request
+description: Suggest an idea for obsidian-extended-mcp
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing your idea. A clear use case helps us prioritize and design the feature.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / use case
+      description: What problem are you trying to solve? What is the current pain point?
+      placeholder: When I ask the MCP to find related notes, it cannot ...
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the feature or behavior you would like to see.
+      placeholder: Add a new tool `...` that returns ...
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Affected layer or tool
+      description: Which part of the system is most relevant?
+      options:
+        - L1 - Tool Server / MCP Layer
+        - L2 - Task Manager
+        - L3 - Ontology / Schema
+        - L4 - Note Operations
+        - L5 - Memory / Retrieval
+        - L6 - Reasoning / Planning
+        - L7 - Execution
+        - L8 - Reflection
+        - L9 - Meta / Orchestration
+        - MABS (Multi-Agent Boot Sequence)
+        - Dev System
+        - Dreaming
+        - Security
+        - Other / Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Have you tried any workarounds or alternative approaches?
+      placeholder: I currently work around this by ...

@@ -349,6 +349,49 @@ export class RestQueryError extends RestError {
   }
 }
 
+export class RestNotFoundError extends RestError {
+  constructor(path: string) {
+    super(
+      'E303',
+      `REST endpoint or note not found: ${path}`,
+      {
+        severity: 'error',
+        recovery: 'Check the note path or command ID.',
+        retryable: false,
+      }
+    );
+  }
+}
+
+export class RestAuthError extends RestError {
+  constructor(details?: string) {
+    super(
+      'E304',
+      `REST API authentication failed${details ? ': ' + details : ''}`,
+      {
+        severity: 'fatal',
+        recovery: 'Check REST_API_TOKEN and Local REST API plugin settings.',
+        retryable: false,
+      }
+    );
+  }
+}
+
+export class RestTimeoutError extends RestError {
+  constructor(timeoutMs: number) {
+    super(
+      'E305',
+      `REST API request timed out after ${timeoutMs}ms`,
+      {
+        severity: 'warning',
+        recovery: 'Increase timeout or check Obsidian responsiveness.',
+        retryable: true,
+        maxRetries: 1,
+      }
+    );
+  }
+}
+
 // ───────────────────────────────────────────
 // Layer 3: Pipeline
 // ───────────────────────────────────────────

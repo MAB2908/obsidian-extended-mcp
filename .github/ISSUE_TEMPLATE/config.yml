@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/tomfin/obsidian-extended-mcp#readme
+    about: Check the README before opening an issue.
+  - name: Discussions
+    url: https://github.com/tomfin/obsidian-extended-mcp/discussions
+    about: Ask questions, share ideas, or get help with setup.

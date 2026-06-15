@@ -1,0 +1,109 @@
+name: Bug Report
+description: Report a bug in obsidian-extended-mcp
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill out the details below so we can reproduce and fix it.
+  - type: dropdown
+    id: client
+    attributes:
+      label: MCP Client
+      description: Which MCP client are you using?
+      options:
+        - Claude Desktop
+        - Kimi
+        - Cursor
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: client-other
+    attributes:
+      label: Other client (if applicable)
+      description: If you selected "Other", please specify the client and version.
+      placeholder: e.g. Cline v2.8.0
+  - type: input
+    id: os
+    attributes:
+      label: OS and version
+      description: What operating system are you running on?
+      placeholder: e.g. Windows 11 23H2, macOS 14.5, Ubuntu 22.04
+    validations:
+      required: true
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js version
+      description: Run `node --version` and paste the output.
+      placeholder: e.g. 20.12.2
+    validations:
+      required: true
+  - type: input
+    id: project-version
+    attributes:
+      label: Project version
+      description: Which version of obsidian-extended-mcp are you using?
+      placeholder: 0.3.4
+      value: "0.3.4"
+    validations:
+      required: true
+  - type: dropdown
+    id: vault-path-type
+    attributes:
+      label: Vault path type
+      description: How is your Obsidian vault stored?
+      options:
+        - Local filesystem
+        - Network / SMB / NAS
+        - WSL (Windows Subsystem for Linux)
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide a minimal set of steps that consistently trigger the bug.
+      placeholder: |
+        1. Start the MCP server
+        2. Open Obsidian vault at ...
+        3. Call tool `...`
+        4. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+      placeholder: The tool should return a list of notes matching the query.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior / logs
+      description: What actually happened? Include full error messages, stack traces, or MCP logs.
+      placeholder: Paste logs here (redact sensitive paths if needed).
+    validations:
+      required: true
+  - type: textarea
+    id: env-snippet
+    attributes:
+      label: .env redacted snippet (optional)
+      description: If the bug might be related to configuration, paste a redacted version of your `.env`. **Never share secrets or API keys.**
+      placeholder: |
+        OBSIDIAN_VAULT_PATH=/path/to/vault
+        # API keys removed
+      render: shell
+  - type: checkboxes
+    id: search-enabled
+    attributes:
+      label: Search features enabled
+      description: Which search backends are enabled in your configuration?
+      options:
+        - label: BM25 / FTS5
+        - label: Vector / semantic search

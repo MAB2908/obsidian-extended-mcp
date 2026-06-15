@@ -15,6 +15,18 @@ export declare const serverConfig: {
     readonly authToken: string;
     /** Enforce ontology rules on writes */
     readonly enforceOntology: boolean;
+    /** Enable Streamable HTTP transport */
+    readonly httpEnabled: boolean;
+    /** HTTP transport bind host */
+    readonly httpHost: string;
+    /** HTTP transport port */
+    readonly httpPort: number;
+    /** HTTP transport MCP endpoint path */
+    readonly httpPath: string;
+    /** Allowed CORS origins (empty disables CORS) */
+    readonly httpCorsOrigins: string[];
+    /** Disable stdio transport when HTTP is enabled */
+    readonly stdioDisabled: boolean;
 };
 export declare const autoDreamingConfig: {
     /** Enable automatic dreaming pipeline */
@@ -91,8 +103,10 @@ export declare const securityConfig: {
     readonly enableEval: boolean;
     /** Enable batch_edit */
     readonly enableBatchEdit: boolean;
-    /** Enable delete_note */
+    /** Enable delete_note and audit purge */
     readonly enableDelete: boolean;
+    /** Enable audit logging and audit purge tool */
+    readonly enableAudit: boolean;
     /** Safe zones (writable without confirmation) */
     readonly safeZones: string[];
     /** Writable paths */
@@ -115,6 +129,16 @@ export declare const securityConfig: {
     readonly auditRotationMb: number;
     /** Audit log max in-memory buffer size (entries) */
     readonly auditMaxBufferSize: number;
+    /** Remote audit sink URL */
+    readonly auditRemoteUrl: string;
+    /** Remote audit sink bearer token */
+    readonly auditRemoteToken: string;
+    /** Remote audit sink batch size */
+    readonly auditRemoteBatchSize: number;
+    /** Remote audit sink request timeout in milliseconds */
+    readonly auditRemoteTimeoutMs: number;
+    /** Remote audit sink retry attempts */
+    readonly auditRemoteRetryAttempts: number;
 };
 export declare const bridgeConfig: {
     /** Path to obsidian-cli binary */
