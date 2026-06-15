@@ -191,17 +191,37 @@ export class PipelineOrchestrator {
     async runLink(relPath) {
         return this.metrics.measure('link', async () => {
             const note = await this.vault.readNote(relPath);
-            // Collect ALL note titles as potential link targets, not just concepts
+            // Limit targets to the most relevant ones to keep the prompt small
+            // and avoid empty responses from cloud models with huge contexts.
+            const MAX_TARGETS = 30;
             const allTitles = [];
             for await (const n of this.iterateAllNotes()) {
                 if (n.path !== relPath) {
                     allTitles.push(n.title);
                 }
             }
+            const contentWords = new Set(note.content.toLowerCase().split(/[^a-zа-я0-9]+/u).filter((w) => w.length > 2));
+            const scored = allTitles
+                .map((t) => {
+                const titleWords = t.toLowerCase().split(/[^a-zа-я0-9]+/u).filter((w) => w.length > 2);
+                const score = titleWords.filter((w) => contentWords.has(w)).length;
+                return { title: t, score };
+            })
+                .sort((a, b) => b.score - a.score);
+            const relevant = scored.slice(0, MAX_TARGETS).map((s) => s.title);
+            const shortTitles = allTitles
+                .filter((t) => t !== note.title && !relevant.includes(t) && t.split(/\s+/).length <= 2)
+                .slice(0, 10);
+            const availableTargets = [...relevant, ...shortTitles].slice(0, MAX_TARGETS);
+            // Keep prompt compact for cloud models with limited context budget
+            const MAX_CONTENT_CHARS = 800;
+            const content = note.content.length <= MAX_CONTENT_CHARS
+                ? note.content
+                : note.content.slice(0, MAX_CONTENT_CHARS) + '\n...';
             const result = await this.linkAgent.execute({
-                content: note.content,
+                content,
                 title: note.title,
-                availableTargets: allTitles,
+                availableTargets,
             });
             let updated = note.content;
             for (const s of result.data.suggestions) {
@@ -278,9 +298,9 @@ export class PipelineOrchestrator {
                     console.error(`[LinkBatch]   → failed: ${err instanceof Error ? err.message : String(err)}`);
                     results.push({ path: candidate.path, linksAdded: 0, suggestions: 0 });
                 }
-                // Delay between notes to avoid connection pool issues with Ollama Cloud
+                // Small delay between notes to avoid rate limiting
                 if (i < toProcess.length - 1) {
-                    await new Promise((r) => setTimeout(r, 15000));
+                    await new Promise((r) => setTimeout(r, 1000));
                 }
             }
             return {

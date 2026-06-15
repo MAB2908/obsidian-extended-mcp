@@ -29,6 +29,15 @@ export class BackgroundIndexer {
             if (!loaded) {
                 this.markAllDirty();
             }
+            else if (this.vector && this.semanticDb && this.vector.getStats().totalVectors === 0) {
+                // Vector cache was skipped; load embeddings from SQLite
+                console.error('[BackgroundIndexer] Loading embeddings from SQLite into vector engine...');
+                const embs = this.semanticDb.getAllEmbeddings(this.vector.modelName);
+                for (const emb of embs) {
+                    this.vector.setVector(`${emb.nodePath}#${emb.chunkIndex}`, emb.vector);
+                }
+                console.error(`[BackgroundIndexer] Loaded ${embs.length} embeddings from SQLite`);
+            }
         }
     }
     markDirty(relPath) {
@@ -168,7 +177,11 @@ export class BackgroundIndexer {
                     // skip other unreadable files
                 }
             }
-            // Phase 2: Atomically update all in-memory indexes (synchronous, no interleaving)
+            // Phase 2: Update in-memory indexes and collect DB payloads
+            const dbNodes = [];
+            const dbEdges = [];
+            const dbChunks = [];
+            const dbFts = [];
             for (let i = 0; i < noteData.length; i++) {
                 const data = noteData[i];
                 if (i % 50 === 0)
@@ -191,41 +204,60 @@ export class BackgroundIndexer {
                     this.graph.addEdge(data.relPath, target, 'wikilink');
                 }
                 if (this.semanticDb) {
-                    this.semanticDb.upsertNode({
+                    dbNodes.push({
                         path: data.relPath,
                         title: data.title,
                         contentHash: data.contentHash,
                         wordCount: data.content.split(/\s+/).length,
                     });
-                    this.semanticDb.deleteEdgesFrom(data.relPath);
                     for (const target of data.outboundLinks) {
-                        this.semanticDb.upsertEdge({ fromPath: data.relPath, toPath: target, type: 'wikilink' });
+                        dbEdges.push({ fromPath: data.relPath, toPath: target, type: 'wikilink' });
                     }
-                    this.semanticDb.updateFTSContent(data.relPath, `${data.title}\n${data.content}`);
+                    dbFts.push({ path: data.relPath, content: `${data.title}\n${data.content}` });
                 }
                 if (this.vector && this.semanticDb) {
                     const chunks = this.chunkNote(`${data.title}\n${data.content}`);
-                    this.semanticDb.deleteChunks(data.relPath);
                     for (let i = 0; i < chunks.length; i++) {
                         const chunk = chunks[i];
-                        const chunkId = this.semanticDb.upsertChunk({
+                        dbChunks.push({
                             nodePath: data.relPath,
                             chunkIndex: i,
                             heading: chunk.heading,
                             content: chunk.content,
                             tokenCount: chunk.content.split(/\s+/).length,
                         });
-                        chunkVectorDocs.push({ id: `${data.relPath}#${i}`, text: chunk.content, chunkId });
                     }
                 }
                 else if (this.vector) {
                     vectorDocs.push({ id: data.relPath, text: `${data.title}\n${data.content}` });
                 }
             }
+            if (this.semanticDb && dbNodes.length > 0) {
+                console.error(`[BackgroundIndexer] Bulk writing ${dbNodes.length} nodes, ${dbEdges.length} edges, ${dbChunks.length} chunks...`);
+                if (toProcess.has('*')) {
+                    this.semanticDb.clearAll();
+                }
+                else {
+                    for (const node of dbNodes) {
+                        this.semanticDb.deleteEdgesFrom(node.path);
+                        this.semanticDb.deleteChunks(node.path);
+                    }
+                }
+                const chunkIds = this.semanticDb.bulkIndex(dbNodes, dbEdges, dbChunks);
+                for (let i = 0; i < dbChunks.length; i++) {
+                    const chunk = dbChunks[i];
+                    chunkVectorDocs.push({ id: `${chunk.nodePath}#${chunk.chunkIndex}`, text: chunk.content, chunkId: chunkIds[i] });
+                }
+                console.error(`[BackgroundIndexer] Bulk write done, updating FTS for ${dbFts.length} notes...`);
+                this.semanticDb.bulkUpdateFTS(dbFts);
+                console.error(`[BackgroundIndexer] FTS update done`);
+            }
             if (this.vector && chunkVectorDocs.length > 0) {
                 try {
                     const semanticDb = this.semanticDb;
+                    console.error(`[Indexing] Embedding ${chunkVectorDocs.length} chunks...`);
                     await this.vector.indexDocs(chunkVectorDocs.map((c) => ({ id: c.id, text: c.text })));
+                    let embedded = 0;
                     for (const chunk of chunkVectorDocs) {
                         const vec = this.vector.getVector(chunk.id);
                         if (vec && semanticDb) {
@@ -235,8 +267,10 @@ export class BackgroundIndexer {
                                 vector: new Float32Array(vec),
                                 dimensions: vec.length,
                             });
+                            embedded++;
                         }
                     }
+                    console.error(`[Indexing] Embedded ${embedded}/${chunkVectorDocs.length} chunks`);
                 }
                 catch (err) {
                     console.error('[BackgroundIndexer] Vector embedding failed:', err);

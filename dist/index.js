@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// v0.2.0-beta.2:
-// v0.2.0-beta.2:
+// v0.3.0:
+// v0.3.0:
 // Load .env with override BEFORE any config imports (ESM hoisting safety)
 import './shared/load-env.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -103,7 +103,8 @@ async function main() {
     if (semanticConfig.enabled) {
         embedProvider = llmConfig.openAiKey
             ? new OpenAIEmbeddingProvider(llmConfig.openAiKey, semanticConfig.embedModel)
-            : new OllamaEmbeddingProvider(llmConfig.ollamaBaseUrl, semanticConfig.ollamaEmbedModel);
+            : new OllamaEmbeddingProvider(process.env.OLLAMA_EMBED_BASE_URL || llmConfig.ollamaBaseUrl, semanticConfig.ollamaEmbedModel);
+        console.error(`[Semantic] Embedding provider: ${embedProvider?.name}, model: ${semanticConfig.ollamaEmbedModel}, baseUrl: ${embedProvider?.baseUrl ?? (process.env.OLLAMA_EMBED_BASE_URL || llmConfig.ollamaBaseUrl)}`);
     }
     const persistence = multiVault ? undefined : new IndexPersistence(vaultPath);
     // Initialize L4 components on the vault entry (moved from VaultPool to avoid L1→L3/L6 dependency)
@@ -121,6 +122,10 @@ async function main() {
     }
     await initializeVaultEntry(defaultEntry, embedProvider, undefined);
     const adapter = new LLMAdapter(llmConfig.defaultProvider);
+    // Model-Aware Backup System (MABS) must be attached before providers register their profiles
+    const mabs = new ModelAwareBackupService(vaultPath);
+    await mabs.initialize();
+    adapter.attachBackupService(mabs);
     if (openAiKey) {
         adapter.registerProvider(new OpenAIProvider({
             apiKey: openAiKey,
@@ -152,10 +157,6 @@ async function main() {
     // L7: 4-Level Dev System
     const devSystem = new DevSystemEngine(defaultEntry.vault);
     await devSystem.initialize();
-    // Model-Aware Backup System (MABS)
-    const mabs = new ModelAwareBackupService(vaultPath);
-    await mabs.initialize();
-    adapter.attachBackupService(mabs);
     devSystem.attachBackupService(mabs);
     // BatchEditGuard is created per-vault on demand
     const fileRouter = new FileTypeRouter(vaultPath);
@@ -239,7 +240,7 @@ async function main() {
             }
         }
     }
-    const server = new Server({ name: 'obsidian-extended-mcp', version: '0.2.0-beta.2' }, { capabilities: { tools: {} } });
+    const server = new Server({ name: 'obsidian-extended-mcp', version: '0.3.0' }, { capabilities: { tools: {} } });
     server.setRequestHandler(ListToolsRequestSchema, async () => {
         return {
             tools: dispatcher.listTools().map((t) => ({
@@ -249,22 +250,27 @@ async function main() {
             })),
         };
     });
+    // Serialize tool calls so that write→read operations in the same session
+    // are processed in order. The MCP SDK may dispatch requests concurrently.
+    let toolQueue = Promise.resolve();
     server.setRequestHandler(CallToolRequestSchema, async (request) => {
-        const { name, arguments: args } = request.params;
-        try {
-            const auth = security.authorize(name, args);
-            if (!auth.allowed) {
-                audit.log({ event: 'security', tool: name, reason: auth.reason, blocked: true, vaultPath: args?.vaultPath });
-                return { content: [{ type: 'text', text: `Security blocked: ${auth.reason}` }], isError: true };
+        return toolQueue = toolQueue.then(async () => {
+            const { name, arguments: args } = request.params;
+            try {
+                const auth = security.authorize(name, args);
+                if (!auth.allowed) {
+                    audit.log({ event: 'security', tool: name, reason: auth.reason, blocked: true, vaultPath: args?.vaultPath });
+                    return { content: [{ type: 'text', text: `Security blocked: ${auth.reason}` }], isError: true };
+                }
+                const result = await dispatcher.call(name, args);
+                return result;
             }
-            const result = await dispatcher.call(name, args);
-            return result;
-        }
-        catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            audit.log({ event: 'error', tool: name, message, blocked: false });
-            return { content: [{ type: 'text', text: `Error: ${message}` }], isError: true };
-        }
+            catch (err) {
+                const message = err instanceof Error ? err.message : String(err);
+                audit.log({ event: 'error', tool: name, message, blocked: false });
+                return { content: [{ type: 'text', text: `Error: ${message}` }], isError: true };
+            }
+        });
     });
     const transport = new StdioServerTransport();
     let authWrapper;

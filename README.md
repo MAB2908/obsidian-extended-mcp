@@ -1,7 +1,9 @@
-# Obsidian Extended MCP v0.2.0-beta.3
+# Obsidian Extended MCP v0.3.0
 
 AI-first Knowledge Base Server integrating Obsidian with MCP clients.
 
+> **v0.3.0** — Ollama Cloud + local embeddings integration is now stable. Fixed concurrent tool-call ordering, switched FTS5 to `unicode61` for Russian text, reduced prompt size for `ai_link`, and added a full MCP checklist.
+>
 > **v0.2.0-beta.3** — Batch AI linking (`ai_link_batch`) with Ollama Cloud reliability fixes. `Connection: close` header prevents socket reuse errors on sequential requests. LinkAgent now targets all note titles (not just `concepts/`).
 >
 > **v0.2.0-beta.1** — Fixed event-loop blocking on large vaults (12,000+ notes). BackgroundIndexer and VaultManager now yield to the event loop every 50 iterations, eliminating MCP timeouts. Background indexing is skipped when `SEMANTIC_ENABLED=false`.

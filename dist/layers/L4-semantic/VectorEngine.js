@@ -70,6 +70,9 @@ export class VectorEngine {
     getVector(id) {
         return this.vectors.get(id);
     }
+    setVector(id, vector) {
+        this.vectors.set(id, vector);
+    }
     get modelName() {
         return this.provider.name;
     }

@@ -10,26 +10,46 @@ export class OllamaEmbeddingProvider {
     }
     async isAvailable() {
         try {
+            console.error(`[OllamaEmbeddingProvider] checking availability at ${this.baseUrl}/api/tags`);
             const res = await fetch(`${this.baseUrl}/api/tags`);
+            console.error(`[OllamaEmbeddingProvider] availability result: ${res.status}`);
             return res.ok;
         }
-        catch {
+        catch (err) {
+            console.error(`[OllamaEmbeddingProvider] availability error: ${err.message}`);
             return false;
         }
     }
     async embed(texts) {
         if (texts.length === 0)
             return [];
-        const res = await fetch(`${this.baseUrl}/api/embed`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: this.model, input: texts }),
+        const batchSize = 32;
+        const maxChars = 2000;
+        const truncated = texts.map((t) => {
+            if (t.length <= maxChars)
+                return t;
+            return t.slice(0, maxChars);
         });
-        if (!res.ok) {
-            throw new Error(`Ollama embed error: ${res.status}`);
+        const results = [];
+        for (let i = 0; i < truncated.length; i += batchSize) {
+            const batch = truncated.slice(i, i + batchSize);
+            console.error(`[OllamaEmbeddingProvider] embedding batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(truncated.length / batchSize)} (${batch.length} texts)`);
+            const res = await fetch(`${this.baseUrl}/api/embed`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model: this.model, input: batch }),
+            });
+            if (!res.ok) {
+                const body = await res.text().catch(() => '');
+                throw new Error(`Ollama embed error: ${res.status} ${body.slice(0, 500)}`);
+            }
+            const json = await res.json();
+            if (!json.embeddings || json.embeddings.length !== batch.length) {
+                throw new Error(`Ollama embed returned ${json.embeddings?.length ?? 0} vectors for ${batch.length} texts`);
+            }
+            results.push(...json.embeddings);
         }
-        const json = await res.json();
-        return json.embeddings;
+        return results;
     }
 }
 export class OpenAIEmbeddingProvider {

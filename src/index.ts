@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// v0.2.0-beta.2:
-// v0.2.0-beta.2:
+// v0.3.0:
+// v0.3.0:
 // Load .env with override BEFORE any config imports (ESM hoisting safety)
 import './shared/load-env.js';
 
@@ -125,7 +125,7 @@ async function main() {
   if (semanticConfig.enabled) {
     embedProvider = llmConfig.openAiKey
       ? new OpenAIEmbeddingProvider(llmConfig.openAiKey, semanticConfig.embedModel)
-      : new OllamaEmbeddingProvider(llmConfig.ollamaBaseUrl, semanticConfig.ollamaEmbedModel);
+      : new OllamaEmbeddingProvider(process.env.OLLAMA_EMBED_BASE_URL || llmConfig.ollamaBaseUrl, semanticConfig.ollamaEmbedModel);
   }
 
   const persistence = multiVault ? undefined : new IndexPersistence(vaultPath);
@@ -296,7 +296,7 @@ async function main() {
   }
 
   const server = new Server(
-    { name: 'obsidian-extended-mcp', version: '0.2.0-beta.2' },
+    { name: 'obsidian-extended-mcp', version: '0.3.0' },
     { capabilities: { tools: {} } }
   );
 
@@ -310,21 +310,26 @@ async function main() {
     };
   });
 
+  // Serialize tool calls so that write→read operations in the same session
+  // are processed in order. The MCP SDK may dispatch requests concurrently.
+  let toolQueue: Promise<unknown> = Promise.resolve();
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    const { name, arguments: args } = request.params;
-    try {
-      const auth = security.authorize(name, args as Record<string, unknown>);
-      if (!auth.allowed) {
-        audit.log({ event: 'security', tool: name, reason: auth.reason, blocked: true, vaultPath: (args as Record<string, unknown>)?.vaultPath as string | undefined });
-        return { content: [{ type: 'text', text: `Security blocked: ${auth.reason}` }], isError: true };
+    return toolQueue = toolQueue.then(async () => {
+      const { name, arguments: args } = request.params;
+      try {
+        const auth = security.authorize(name, args as Record<string, unknown>);
+        if (!auth.allowed) {
+          audit.log({ event: 'security', tool: name, reason: auth.reason, blocked: true, vaultPath: (args as Record<string, unknown>)?.vaultPath as string | undefined });
+          return { content: [{ type: 'text', text: `Security blocked: ${auth.reason}` }], isError: true };
+        }
+        const result = await dispatcher.call(name, args);
+        return result as { content: Array<{ type: string; text: string }> };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        audit.log({ event: 'error', tool: name, message, blocked: false });
+        return { content: [{ type: 'text', text: `Error: ${message}` }], isError: true };
       }
-      const result = await dispatcher.call(name, args);
-      return result as { content: Array<{ type: string; text: string }> };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      audit.log({ event: 'error', tool: name, message, blocked: false });
-      return { content: [{ type: 'text', text: `Error: ${message}` }], isError: true };
-    }
+    });
   });
 
   const transport = new StdioServerTransport();
