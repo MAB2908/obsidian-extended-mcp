@@ -4,7 +4,6 @@ import type { VaultEntry } from './VaultPool.js';
 import { VaultPathNotFoundError } from '../../shared/errors.js';
 import type { IVaultManager } from '../../shared/interfaces/IVaultManager.js';
 import type { IGraphEngine } from '../../shared/interfaces/IGraphEngine.js';
-import type { IBM25Engine } from '../../shared/interfaces/IBM25Engine.js';
 import type { ISemanticDatabase } from '../../shared/interfaces/ISemanticDatabase.js';
 import type { IBackgroundIndexer } from '../../shared/interfaces/IBackgroundIndexer.js';
 import type { IPipelineOrchestrator } from '../../shared/interfaces/IPipelineOrchestrator.js';
@@ -15,7 +14,6 @@ export interface VaultContext {
   vaultPath: string;
   vault: IVaultManager;
   graph: IGraphEngine;
-  bm25: IBM25Engine;
   semanticDb: ISemanticDatabase;
   indexer?: IBackgroundIndexer;
   pipeline?: IPipelineOrchestrator;
@@ -39,7 +37,6 @@ export class VaultRouter {
       vaultPath: entry.vault.root,
       vault: entry.vault,
       graph: entry.graph,
-      bm25: entry.bm25,
       semanticDb: entry.semanticDb,
       indexer: entry.indexer,
       pipeline: entry.pipeline,
@@ -56,7 +53,6 @@ export class VaultRouter {
       vaultPath: entry.vault.root,
       vault: entry.vault,
       graph: entry.graph,
-      bm25: entry.bm25,
       semanticDb: entry.semanticDb,
       indexer: entry.indexer,
       pipeline: entry.pipeline,

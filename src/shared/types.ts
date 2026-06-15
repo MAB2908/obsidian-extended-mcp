@@ -38,7 +38,6 @@ export interface SemanticConfig {
 
 import type { IVaultManager } from './interfaces/IVaultManager.js';
 import type { IGraphEngine } from './interfaces/IGraphEngine.js';
-import type { IBM25Engine } from './interfaces/IBM25Engine.js';
 import type { ISemanticDatabase } from './interfaces/ISemanticDatabase.js';
 import type { IBackgroundIndexer } from './interfaces/IBackgroundIndexer.js';
 import type { IVectorEngine } from './interfaces/IVectorEngine.js';
@@ -48,7 +47,6 @@ import type { IDreamingEngine } from './interfaces/IDreamingEngine.js';
 export interface VaultEntry {
   vault: IVaultManager;
   graph: IGraphEngine;
-  bm25: IBM25Engine;
   semanticDb: ISemanticDatabase;
   acl: any;
   indexer?: IBackgroundIndexer;

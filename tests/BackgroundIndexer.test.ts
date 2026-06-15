@@ -5,7 +5,6 @@ import path from 'path';
 import os from 'os';
 import { VaultManager } from '../src/layers/L1-filesystem/VaultManager.js';
 import { GraphEngine } from '../src/layers/L4-semantic/GraphEngine.js';
-import { BM25Engine } from '../src/layers/L4-semantic/BM25Engine.js';
 import { BackgroundIndexer } from '../src/layers/L4-semantic/BackgroundIndexer.js';
 import { SemanticDatabase } from '../src/layers/L4-semantic/SemanticDatabase.js';
 
@@ -35,10 +34,9 @@ describe('BackgroundIndexer', () => {
   it('initializes without persistence', async () => {
     const vault = new VaultManager(vaultPath);
     const graph = new GraphEngine();
-    const bm25 = new BM25Engine();
     const semanticDb = new SemanticDatabase(vaultPath);
     await semanticDb.initSchema();
-    const indexer = new BackgroundIndexer(vault, graph, bm25, undefined, undefined, semanticDb);
+    const indexer = new BackgroundIndexer(vault, graph, undefined, undefined, semanticDb);
 
     await indexer.initialize();
     // Without persistence, dirtyFiles remains empty until markDirty/markAllDirty is called
@@ -50,10 +48,9 @@ describe('BackgroundIndexer', () => {
   it('stops cleanly', async () => {
     const vault = new VaultManager(vaultPath);
     const graph = new GraphEngine();
-    const bm25 = new BM25Engine();
     const semanticDb = new SemanticDatabase(vaultPath);
     await semanticDb.initSchema();
-    const indexer = new BackgroundIndexer(vault, graph, bm25, undefined, undefined, semanticDb);
+    const indexer = new BackgroundIndexer(vault, graph, undefined, undefined, semanticDb);
 
     indexer.markDirty('notes/a.md');
     await indexer.stopGraceful();

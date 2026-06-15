@@ -1,7 +1,6 @@
 import type { VaultPool } from './VaultPool.js';
 import type { IVaultManager } from '../../shared/interfaces/IVaultManager.js';
 import type { IGraphEngine } from '../../shared/interfaces/IGraphEngine.js';
-import type { IBM25Engine } from '../../shared/interfaces/IBM25Engine.js';
 import type { ISemanticDatabase } from '../../shared/interfaces/ISemanticDatabase.js';
 import type { IBackgroundIndexer } from '../../shared/interfaces/IBackgroundIndexer.js';
 import type { IPipelineOrchestrator } from '../../shared/interfaces/IPipelineOrchestrator.js';
@@ -11,7 +10,6 @@ export interface VaultContext {
     vaultPath: string;
     vault: IVaultManager;
     graph: IGraphEngine;
-    bm25: IBM25Engine;
     semanticDb: ISemanticDatabase;
     indexer?: IBackgroundIndexer;
     pipeline?: IPipelineOrchestrator;

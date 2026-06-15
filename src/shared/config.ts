@@ -162,15 +162,6 @@ export const semanticConfig = {
   /** Ollama embedding model */
   ollamaEmbedModel: env('OLLAMA_EMBED_MODEL', yamlVal('semantic', 'ollamaEmbedModel') ?? 'nomic-embed-text'),
 
-  /** BM25 parameter k1 */
-  bm25K1: envNumber('BM25_K1', yamlVal('semantic', 'bm25K1') ?? 1.5),
-
-  /** BM25 parameter b */
-  bm25B: envNumber('BM25_B', yamlVal('semantic', 'bm25B') ?? 0.75),
-
-  /** Default BM25 search limit */
-  bm25DefaultLimit: envNumber('BM25_DEFAULT_LIMIT', yamlVal('semantic', 'bm25DefaultLimit') ?? 50),
-
   /** RRF fusion constant K */
   rrfK: envNumber('RRF_K', yamlVal('semantic', 'rrfK') ?? 60),
 

@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { VaultManager } from '../../src/layers/L1-filesystem/VaultManager.js';
 import { GraphEngine } from '../../src/layers/L4-semantic/GraphEngine.js';
-import { BM25Engine } from '../../src/layers/L4-semantic/BM25Engine.js';
+import { SemanticDatabase } from '../../src/layers/L4-semantic/SemanticDatabase.js';
 import { generateSyntheticVault, cleanupVault } from './synthetic.js';
 
 const PERF_DIR = './tests/performance/.perf-vault';
@@ -84,27 +84,29 @@ describe('Performance Benchmarks', () => {
     }, 60000);
   });
 
-  describe('BM25 search', () => {
+  describe('FTS5 search', () => {
     it('searches 10K notes in < 100ms', async () => {
-      const vaultPath = `${PERF_DIR}-bm25`;
+      const vaultPath = `${PERF_DIR}-fts5`;
       try {
         await generateSyntheticVault(vaultPath, { noteCount: 10000, linksPerNote: 3, wordsPerNote: 200 });
         const vault = new VaultManager(vaultPath);
-        const bm25 = new BM25Engine();
+        const semanticDb = new SemanticDatabase(vaultPath);
+        await semanticDb.initSchema();
 
         const files = await vault.listNotes('');
         for (const relPath of files) {
           const note = await vault.readNote(relPath, { includeFrontmatter: false, includeContent: true });
-          bm25.addDoc(relPath, `${note.title} ${note.content}`);
+          semanticDb.upsertNode({ path: relPath, title: note.title, contentHash: '', wordCount: note.content.split(/\s+/).length });
+          semanticDb.updateFTSContent(relPath, `${note.title}\n${note.content}`);
         }
 
         const start = Date.now();
-        const results = bm25.search('lorem ipsum', 20);
+        const results = semanticDb.searchFTS('lorem ipsum', 20);
         const elapsed = Date.now() - start;
 
         expect(files.length).toBe(10000);
         expect(results.length).toBeGreaterThan(0);
-        console.log(`[Benchmark] BM25 search 10K notes: ${elapsed}ms`);
+        console.log(`[Benchmark] FTS5 search 10K notes: ${elapsed}ms`);
         expect(elapsed).toBeLessThan(500);
       } finally {
         await cleanupVault(vaultPath);
@@ -118,12 +120,14 @@ describe('Performance Benchmarks', () => {
       try {
         await generateSyntheticVault(vaultPath, { noteCount: 100, linksPerNote: 3, wordsPerNote: 500 });
         const vault = new VaultManager(vaultPath);
-        const bm25 = new BM25Engine();
+        const semanticDb = new SemanticDatabase(vaultPath);
+        await semanticDb.initSchema();
         const graph = new GraphEngine();
 
         const start = Date.now();
         const note = await vault.readNote('folder00/note-00000.md', { includeFrontmatter: true, includeContent: true });
-        bm25.addDoc(note.path, `${note.title} ${note.content}`);
+        semanticDb.upsertNode({ path: note.path, title: note.title, contentHash: '', wordCount: note.content.split(/\s+/).length });
+        semanticDb.updateFTSContent(note.path, `${note.title}\n${note.content}`);
         graph.addNode({
           path: note.path,
           title: note.title,

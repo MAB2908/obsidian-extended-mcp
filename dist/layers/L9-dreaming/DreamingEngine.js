@@ -16,7 +16,7 @@ import { DreamState } from './DreamState.js';
 export class DreamingEngine {
     vaultPath;
     vault;
-    bm25;
+    semanticDb;
     signals;
     log;
     loader;
@@ -28,7 +28,7 @@ export class DreamingEngine {
     constructor(config) {
         this.vaultPath = config.vaultPath;
         this.vault = config.vault;
-        this.bm25 = config.bm25;
+        this.semanticDb = config.semanticDb;
         this.signals = config.signals;
         this.log = new DreamLog(config.vaultPath);
         this.loader = new TopicLoader(config.vault, this.signals);
@@ -71,11 +71,17 @@ export class DreamingEngine {
                 prune: [],
                 synthesize: [],
             };
+            const searchFn = (query, limit) => this.semanticDb.searchFTS(query, limit).map((r) => ({
+                path: r.path,
+                score: r.score,
+                snippet: r.snippet ?? '',
+                highlights: [],
+            }));
             if (kinds.includes('link')) {
-                candidates.link = generateLinkCandidates(topics, this.bm25, { maxCandidates });
+                candidates.link = generateLinkCandidates(topics, searchFn, { maxCandidates });
             }
             if (kinds.includes('merge')) {
-                candidates.merge = generateMergeCandidates(topics, this.bm25, { maxCandidates });
+                candidates.merge = generateMergeCandidates(topics, searchFn, { maxCandidates });
             }
             if (kinds.includes('prune')) {
                 candidates.prune = generatePruneCandidates(topics, { maxCandidates });
@@ -264,6 +270,12 @@ export class DreamingEngine {
             SessionLockService.release(this.vaultPath, this.activeSessionId);
         }
         this.signals.close();
+        try {
+            this.semanticDb.close();
+        }
+        catch {
+            // ignore double-close
+        }
         DreamingEngine.creationPromises.delete(this.vaultPath);
     }
 }

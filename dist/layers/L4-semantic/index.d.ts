@@ -1,4 +1,3 @@
-export { BM25Engine } from './BM25Engine.js';
 export { GraphEngine } from './GraphEngine.js';
 export { SemanticDatabase } from './SemanticDatabase.js';
 export { VectorEngine } from './VectorEngine.js';

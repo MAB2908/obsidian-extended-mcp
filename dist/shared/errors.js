@@ -88,17 +88,6 @@ export class CorruptedCacheError extends FileSystemError {
         });
     }
 }
-export class BM25IndexCorruptedError extends FileSystemError {
-    constructor() {
-        super('E105', 'BM25 index corrupted or incompatible version', {
-            severity: 'warning',
-            recovery: 'Remove .mcp-cache/search-index/; index will rebuild incrementally.',
-            fallback: 'ripgrep',
-            retryable: true,
-            maxRetries: 1,
-        });
-    }
-}
 export class FileNotFoundError extends FileSystemError {
     constructor(path) {
         super('E106', `File not found: ${path}`, {

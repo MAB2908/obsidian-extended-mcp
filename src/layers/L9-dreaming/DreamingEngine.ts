@@ -6,7 +6,7 @@
 import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
 import type { IVaultManager } from '../../shared/interfaces/IVaultManager.js';
-import type { IBM25Engine } from '../../shared/interfaces/IBM25Engine.js';
+import type { ISemanticDatabase } from '../../shared/interfaces/ISemanticDatabase.js';
 import type { IDreamingEngine } from '../../shared/interfaces/IDreamingEngine.js';
 import { SignalStore } from './SignalStore.js';
 import { TopicLoader } from './TopicLoader.js';
@@ -30,7 +30,7 @@ import type {
 export interface DreamingEngineConfig {
   vaultPath: string;
   vault: IVaultManager;
-  bm25: IBM25Engine;
+  semanticDb: ISemanticDatabase;
   signals: SignalStore;
   audit?: AuditLogger;
 }
@@ -38,7 +38,7 @@ export interface DreamingEngineConfig {
 export class DreamingEngine implements IDreamingEngine {
   private vaultPath: string;
   private vault: IVaultManager;
-  private bm25: IBM25Engine;
+  private semanticDb: ISemanticDatabase;
   private signals: SignalStore;
   private log: DreamLog;
   private loader: TopicLoader;
@@ -52,7 +52,7 @@ export class DreamingEngine implements IDreamingEngine {
   constructor(config: DreamingEngineConfig) {
     this.vaultPath = config.vaultPath;
     this.vault = config.vault;
-    this.bm25 = config.bm25;
+    this.semanticDb = config.semanticDb;
     this.signals = config.signals;
     this.log = new DreamLog(config.vaultPath);
     this.loader = new TopicLoader(config.vault, this.signals);
@@ -101,11 +101,17 @@ export class DreamingEngine implements IDreamingEngine {
       synthesize: [],
     };
 
+    const searchFn = (query: string, limit: number) => this.semanticDb.searchFTS(query, limit).map((r) => ({
+      path: r.path,
+      score: r.score,
+      snippet: r.snippet ?? '',
+      highlights: [],
+    }));
     if (kinds.includes('link')) {
-      candidates.link = generateLinkCandidates(topics, this.bm25, { maxCandidates });
+      candidates.link = generateLinkCandidates(topics, searchFn, { maxCandidates });
     }
     if (kinds.includes('merge')) {
-      candidates.merge = generateMergeCandidates(topics, this.bm25, { maxCandidates });
+      candidates.merge = generateMergeCandidates(topics, searchFn, { maxCandidates });
     }
     if (kinds.includes('prune')) {
       candidates.prune = generatePruneCandidates(topics, { maxCandidates });
@@ -303,6 +309,11 @@ export class DreamingEngine implements IDreamingEngine {
       SessionLockService.release(this.vaultPath, this.activeSessionId);
     }
     this.signals.close();
+    try {
+      this.semanticDb.close();
+    } catch {
+      // ignore double-close
+    }
     DreamingEngine.creationPromises.delete(this.vaultPath);
   }
 }

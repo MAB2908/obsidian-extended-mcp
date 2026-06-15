@@ -5,7 +5,6 @@ import path from 'path';
 import os from 'os';
 import { VaultPool } from '../src/layers/L1-filesystem/VaultPool.js';
 import { GraphEngine } from '../src/layers/L4-semantic/GraphEngine.js';
-import { BM25Engine } from '../src/layers/L4-semantic/BM25Engine.js';
 import { BackgroundIndexer } from '../src/layers/L4-semantic/BackgroundIndexer.js';
 
 describe('VaultPool', () => {
@@ -33,7 +32,6 @@ describe('VaultPool', () => {
     const entry = await pool.addVault(vault1Path);
     expect(entry.vault.root).toBe(vault1Path);
     expect(entry.graph).toBeInstanceOf(GraphEngine);
-    expect(entry.bm25).toBeInstanceOf(BM25Engine);
   });
 
   it('returns existing entry on duplicate add', async () => {

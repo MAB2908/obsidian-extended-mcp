@@ -3,7 +3,6 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { VaultManager } from '../../src/layers/L1-filesystem/VaultManager.js';
 import { GraphEngine } from '../../src/layers/L4-semantic/GraphEngine.js';
-import { BM25Engine } from '../../src/layers/L4-semantic/BM25Engine.js';
 import { BackgroundIndexer } from '../../src/layers/L4-semantic/BackgroundIndexer.js';
 import { SemanticDatabase } from '../../src/layers/L4-semantic/SemanticDatabase.js';
 import { Dispatcher } from '../../src/layers/L3-pipeline/Dispatcher.js';
@@ -21,7 +20,6 @@ import { MockLLMProvider } from './mock-llm.js';
 export interface TestServer {
   vault: VaultManager;
   graph: GraphEngine;
-  bm25: BM25Engine;
   dispatcher: Dispatcher;
   indexer: BackgroundIndexer;
   semanticDb: SemanticDatabase;
@@ -107,17 +105,16 @@ export async function setupTestServer(fixturePath: string, useMockLLM = false): 
   const security = new SecurityEngine(securityPolicy, acl, gate, audit, sandbox);
   const vault = new VaultManager(vaultPath, acl);
   const graph = new GraphEngine();
-  const bm25 = new BM25Engine();
 
   const semanticDb = new SemanticDatabase(vaultPath);
   await semanticDb.initSchema();
-  const indexer = new BackgroundIndexer(vault, graph, bm25, undefined, undefined, semanticDb);
+  const indexer = new BackgroundIndexer(vault, graph, undefined, undefined, semanticDb);
 
   let pipeline: PipelineOrchestrator | undefined;
   if (useMockLLM) {
     const adapter = new LLMAdapter('mock');
     adapter.registerProvider(new MockLLMProvider());
-    pipeline = new PipelineOrchestrator(vault, graph, bm25, indexer, adapter);
+    pipeline = new PipelineOrchestrator(vault, graph, semanticDb, indexer, adapter);
   }
 
   const batchEditGuard = new BatchEditGuard(vaultPath, vault);
@@ -237,20 +234,7 @@ export async function setupTestServer(fixturePath: string, useMockLLM = false): 
     },
   });
 
-  dispatcher.register({
-    name: 'bm25_search',
-    description: 'BM25 full-text search over indexed notes',
-    inputSchema: {
-      type: 'object',
-      properties: { query: { type: 'string' }, limit: { type: 'number' } },
-      required: ['query'],
-    },
-    handler: async (args) => {
-      const { query, limit } = args as { query: string; limit?: number };
-      const results = bm25.search(query, limit);
-      return { content: [{ type: 'text', text: JSON.stringify(results) }] };
-    },
-  });
+
 
   dispatcher.register({
     name: 'semantic_search_db',
@@ -312,7 +296,7 @@ export async function setupTestServer(fixturePath: string, useMockLLM = false): 
     });
   }
 
-  // Manually build graph and BM25 index synchronously (avoid async background batch issues in tests)
+  // Manually build graph and FTS5 index synchronously (avoid async background batch issues in tests)
   const files = await collectAllMarkdownFiles(vault);
   const linkMap = new Map<string, string>();
   for (const relPath of files) {
@@ -334,7 +318,6 @@ export async function setupTestServer(fixturePath: string, useMockLLM = false): 
       return linkMap.get(basename) || target;
     });
 
-    bm25.addDoc(relPath, `${note.title} ${note.content}`);
     graph.addNode({
       path: relPath,
       title: note.title,
@@ -363,7 +346,7 @@ export async function setupTestServer(fixturePath: string, useMockLLM = false): 
     semanticDb.updateFTSContent(relPath, `${note.title}\n${note.content}`);
   }
 
-  return { vault, graph, bm25, dispatcher, indexer, semanticDb, security, batchEditGuard, fileRouter, vaultPath, pipeline };
+  return { vault, graph, dispatcher, indexer, semanticDb, security, batchEditGuard, fileRouter, vaultPath, pipeline };
 }
 
 export async function teardownTestServer(server: TestServer | undefined): Promise<void> {

@@ -3,7 +3,6 @@ import { semanticConfig } from '../../shared/config.js';
 export class BackgroundIndexer {
     vault;
     graph;
-    bm25;
     vector;
     persistence;
     semanticDb;
@@ -15,17 +14,16 @@ export class BackgroundIndexer {
     maxDirtySize = 100;
     busyRetries = new Map();
     maxBusyRetries = 5;
-    constructor(vault, graph, bm25, vector, persistence, semanticDb) {
+    constructor(vault, graph, vector, persistence, semanticDb) {
         this.vault = vault;
         this.graph = graph;
-        this.bm25 = bm25;
         this.vector = vector;
         this.persistence = persistence;
         this.semanticDb = semanticDb;
     }
     async initialize() {
         if (this.persistence) {
-            const loaded = await this.persistence.load(this.graph, this.bm25, this.vector);
+            const loaded = await this.persistence.load(this.graph, this.vector);
             if (!loaded) {
                 this.markAllDirty();
             }
@@ -186,7 +184,6 @@ export class BackgroundIndexer {
                 const data = noteData[i];
                 if (i % 50 === 0)
                     await this.yieldEventLoop();
-                this.bm25.addDoc(data.relPath, `${data.title} ${data.content}`);
                 this.graph.addNode({
                     path: data.relPath,
                     title: data.title,
@@ -285,7 +282,7 @@ export class BackgroundIndexer {
                 }
             }
             if (this.persistence) {
-                await this.persistence.save(this.graph, this.bm25, this.vector);
+                await this.persistence.save(this.graph, this.vector);
             }
         }
         catch (err) {

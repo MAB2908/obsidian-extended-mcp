@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { VaultManager } from '../src/layers/L1-filesystem/VaultManager.js';
-import { BM25Engine } from '../src/layers/L4-semantic/BM25Engine.js';
 import { SignalStore } from '../src/layers/L9-dreaming/SignalStore.js';
 import { TopicLoader } from '../src/layers/L9-dreaming/TopicLoader.js';
 import { DreamingEngine } from '../src/layers/L9-dreaming/DreamingEngine.js';
@@ -12,6 +11,7 @@ import { generateMergeCandidates } from '../src/layers/L9-dreaming/generators/Me
 import { generatePruneCandidates } from '../src/layers/L9-dreaming/generators/PruneGenerator.js';
 import { generateSynthesizeCandidates } from '../src/layers/L9-dreaming/generators/SynthesizeGenerator.js';
 import type { DreamTopic } from '../src/layers/L9-dreaming/types.js';
+import type { ISemanticDatabase } from '../src/shared/interfaces/ISemanticDatabase.js';
 
 const TEST_VAULT = path.resolve('./test-vault-dreaming');
 
@@ -27,39 +27,67 @@ function makeTopic(overrides: Partial<DreamTopic> & { path: string; title: strin
   };
 }
 
+function makeSearch(topics: DreamTopic[]) {
+  return (query: string, _limit: number) => {
+    const q = query.toLowerCase().split(/\s+/).filter(Boolean);
+    return topics
+      .map((t) => {
+        const text = `${t.title} ${t.summary} ${t.html}`.toLowerCase();
+        const score = q.reduce((sum, w) => sum + (text.includes(w) ? 1 : 0), 0) / Math.max(q.length, 1);
+        return { path: t.path, score, snippet: '', highlights: [] };
+      })
+      .filter((r) => r.score > 0)
+      .sort((a, b) => b.score - a.score);
+  };
+}
+
+function makeMockSemanticDb(results: Array<{ path: string; score: number }> = []): ISemanticDatabase {
+  return {
+    initSchema: async () => {},
+    upsertNode: () => {},
+    deleteEdgesFrom: () => {},
+    upsertEdge: () => {},
+    updateFTSContent: () => {},
+    deleteChunks: () => {},
+    upsertChunk: () => 0,
+    upsertEmbedding: () => {},
+    close: () => {},
+    searchFTS: (_query: string, limit = 20) => results.slice(0, limit).map((r) => ({ path: r.path, score: r.score, snippet: '' })),
+    getStats: () => ({ nodes: results.length, edges: 0, chunks: 0, embeddings: 0 }),
+    clearAll: () => {},
+    bulkIndex: () => [],
+    bulkUpdateFTS: () => {},
+    getAllEmbeddings: () => [],
+  } as unknown as ISemanticDatabase;
+}
+
 describe('L9-Dreaming Generators', () => {
   it('LinkGenerator finds missing cross-links', () => {
-    const bm25 = new BM25Engine();
     const topics: DreamTopic[] = [
       makeTopic({ path: 'a.md', title: 'machine learning', html: 'ml content' }),
       makeTopic({ path: 'b.md', title: 'deep learning', html: 'dl content' }),
       makeTopic({ path: 'c.md', title: 'cooking recipes', html: 'food content' }),
     ];
-    for (const t of topics) bm25.addDoc(t.path, `${t.title} ${t.html}`);
-    const candidates = generateLinkCandidates(topics, bm25, { maxCandidates: 10, threshold: 0.1 });
+    const candidates = generateLinkCandidates(topics, makeSearch(topics), { maxCandidates: 10, threshold: 0.1 });
     expect(candidates.length).toBeGreaterThan(0);
     expect(candidates[0].kind).toBe('link');
   });
 
   it('LinkGenerator skips already-linked pairs', () => {
-    const bm25 = new BM25Engine();
     const topics: DreamTopic[] = [
       makeTopic({ path: 'a.md', title: 'machine learning', related: ['b.md'] }),
       makeTopic({ path: 'b.md', title: 'deep learning' }),
     ];
-    for (const t of topics) bm25.addDoc(t.path, t.title);
-    const candidates = generateLinkCandidates(topics, bm25, { maxCandidates: 10 });
+    const candidates = generateLinkCandidates(topics, makeSearch(topics), { maxCandidates: 10 });
     expect(candidates.some((c) => c.sourcePath === 'a.md' && c.targetPath === 'b.md')).toBe(false);
   });
 
   it('MergeGenerator finds highly similar notes', () => {
-    const bm25 = new BM25Engine();
     const topics: DreamTopic[] = [
       makeTopic({ path: 'a.md', title: 'react hooks', summary: 'useState useEffect' }),
       makeTopic({ path: 'b.md', title: 'react hooks guide', summary: 'useState useEffect tutorial' }),
     ];
-    for (const t of topics) bm25.addDoc(t.path, `${t.title} ${t.summary}`);
-    const candidates = generateMergeCandidates(topics, bm25, { maxCandidates: 10, threshold: 0.1 });
+    const candidates = generateMergeCandidates(topics, makeSearch(topics), { maxCandidates: 10, threshold: 0.1 });
     expect(candidates.length).toBeGreaterThan(0);
     expect(candidates[0].kind).toBe('merge');
   });
@@ -143,8 +171,10 @@ describe('L9-Dreaming Engine Integration', () => {
     await vault.writeNote('ml/learn.md', '# ML Learning\ncontent about ml');
     await vault.writeNote('ml/deep.md', '# Deep Learning\ncontent about deep');
     await vault.writeNote('cook/recipe.md', '# Recipe\ncontent about food');
-    const bm25 = new BM25Engine();
-    engine = await DreamingEngine.create({ vaultPath: TEST_VAULT, vault, bm25 });
+    engine = await DreamingEngine.create({ vaultPath: TEST_VAULT, vault, semanticDb: makeMockSemanticDb([
+      { path: 'ml/deep.md', score: 0.8 },
+      { path: 'cook/recipe.md', score: 0.2 },
+    ]) });
   });
 
   afterEach(async () => {
@@ -192,10 +222,13 @@ describe('L9-Dreaming Engine Integration', () => {
   });
 
   it('getEngine race safety: concurrent calls return same engine', async () => {
-    const bm25 = new BM25Engine();
+    const semanticDb = makeMockSemanticDb([
+      { path: 'ml/learn.md', score: 0.9 },
+      { path: 'ml/deep.md', score: 0.8 },
+    ]);
     const [e1, e2] = await Promise.all([
-      DreamingEngine.create({ vaultPath: TEST_VAULT, vault, bm25 }),
-      DreamingEngine.create({ vaultPath: TEST_VAULT, vault, bm25 }),
+      DreamingEngine.create({ vaultPath: TEST_VAULT, vault, semanticDb }),
+      DreamingEngine.create({ vaultPath: TEST_VAULT, vault, semanticDb }),
     ]);
     expect(e1).toBe(e2);
     // do not close here — afterEach will close the shared engine
@@ -212,7 +245,7 @@ describe('L9-Dreaming Engine Integration', () => {
     const otherEngine = await DreamingEngine.create({
       vaultPath: path.resolve('./test-vault-dreaming-other'),
       vault: new VaultManager(path.resolve('./test-vault-dreaming-other')),
-      bm25: new BM25Engine(),
+      semanticDb: makeMockSemanticDb(),
     });
     await expect(
       otherEngine.finalize({ sessionId: session.sessionId, archivePaths: [] })

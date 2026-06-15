@@ -2,7 +2,7 @@
 import { promises as fs } from 'fs';
 import type { IVaultManager } from '../../shared/interfaces/IVaultManager.js';
 import type { IGraphEngine } from '../../shared/interfaces/IGraphEngine.js';
-import type { IBM25Engine } from '../../shared/interfaces/IBM25Engine.js';
+import type { ISemanticDatabase } from '../../shared/interfaces/ISemanticDatabase.js';
 import type { IBackgroundIndexer } from '../../shared/interfaces/IBackgroundIndexer.js';
 import type { IPipelineOrchestrator } from '../../shared/interfaces/IPipelineOrchestrator.js';
 import type { LLMAdapter } from '../L6-ai-core/LLMAdapter.js';
@@ -31,7 +31,7 @@ export class PipelineOrchestrator implements IPipelineOrchestrator {
   constructor(
     private vault: IVaultManager,
     private graph: IGraphEngine,
-    private bm25: IBM25Engine,
+    private semanticDb: ISemanticDatabase,
     private indexer: IBackgroundIndexer,
     adapter: LLMAdapter,
     metrics?: PipelineMetrics,
@@ -82,7 +82,12 @@ export class PipelineOrchestrator implements IPipelineOrchestrator {
 
   async runQuery(question: string): Promise<unknown> {
     return this.metrics.measure('query', async () => {
-      const results = this.bm25.search(question, 10);
+      const results = this.semanticDb.searchFTS(question, 10).map((r) => ({
+        path: r.path,
+        score: r.score,
+        snippet: r.snippet ?? '',
+        highlights: [],
+      }));
       const contextNotes = await Promise.all(
         results.map(async (r) => {
           const note = await this.vault.readNote(r.path, { includeContent: true });

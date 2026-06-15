@@ -133,10 +133,15 @@ export function createCliTools(resolveVault: (args: Record<string, unknown>) => 
             // Fallback to vault search
           }
         }
-        // Prefer BM25 index if populated (fast O(1) per token)
-        const bm25Stats = ctx.bm25.getStats();
-        if (bm25Stats.totalDocs > 0) {
-          const result = ctx.bm25.search(query, 50);
+        // Prefer SQLite FTS5 index if populated
+        const dbStats = ctx.semanticDb.getStats();
+        if (dbStats.nodes > 0) {
+          const result = ctx.semanticDb.searchFTS(query, 50).map((r) => ({
+            path: r.path,
+            score: r.score,
+            snippet: r.snippet ?? '',
+            highlights: [],
+          }));
           return { content: [{ type: 'text', text: JSON.stringify(result) }] };
         }
         const result = await ctx.vault.searchNotes(query, { limit: 50 });

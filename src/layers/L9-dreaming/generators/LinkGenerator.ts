@@ -1,5 +1,5 @@
 // v0.2b:
-import type { IBM25Engine } from '../../../shared/interfaces/IBM25Engine.js';
+import type { SearchResult } from '../../../shared/types.js';
 import type { DreamTopic, LinkCandidate } from '../types.js';
 
 export interface LinkGeneratorOptions {
@@ -9,7 +9,7 @@ export interface LinkGeneratorOptions {
 
 export function generateLinkCandidates(
   topics: DreamTopic[],
-  bm25: IBM25Engine,
+  search: (query: string, limit: number) => SearchResult[],
   opts: LinkGeneratorOptions = {},
 ): LinkCandidate[] {
   const threshold = opts.threshold ?? 0.5;
@@ -18,7 +18,7 @@ export function generateLinkCandidates(
   const candidates: LinkCandidate[] = [];
 
   for (const source of topics) {
-    const results = bm25.search(source.title, 10);
+    const results = search(source.title, 10);
     for (const hit of results) {
       if (hit.path === source.path) continue;
       if (hit.score < threshold) continue;
@@ -38,7 +38,7 @@ export function generateLinkCandidates(
         sourcePath: source.path,
         targetPath: target.path,
         score: hit.score,
-        reason: `BM25 score ${hit.score.toFixed(2)} on title "${source.title}"`,
+        reason: `FTS5 score ${hit.score.toFixed(2)} on title "${source.title}"`,
       });
     }
   }

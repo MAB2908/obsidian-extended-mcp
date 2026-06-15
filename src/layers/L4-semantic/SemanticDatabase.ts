@@ -228,6 +228,10 @@ export class SemanticDatabase implements ISemanticDatabase {
   }
 
   searchFTS(query: string, limit = 20): FTSSearchResult[] {
+    const safeQuery = query
+      .replace(/"/g, '""')
+      .trim();
+    const wrapped = safeQuery ? `"${safeQuery}"` : '';
     const stmt = this.db.prepare(`
       SELECT path, rank, snippet(search_index, 0, '>>>', '<<<', '...', 32) AS snippet
       FROM search_index
@@ -235,7 +239,7 @@ export class SemanticDatabase implements ISemanticDatabase {
       ORDER BY rank
       LIMIT ?
     `);
-    const rows = stmt.all(query, limit) as Array<{ path: string; rank: number; snippet: string }>;
+    const rows = stmt.all(wrapped, limit) as Array<{ path: string; rank: number; snippet: string }>;
     return rows.map((r) => ({ path: r.path, score: 1 / (1 + Math.abs(r.rank)), snippet: r.snippet }));
   }
 

@@ -15,7 +15,7 @@ describe('E2E Dreaming', () => {
     engine = await DreamingEngine.create({
       vaultPath: server.vaultPath,
       vault: server.vault,
-      bm25: server.bm25,
+      semanticDb: server.semanticDb,
     });
   }, 15000);
 

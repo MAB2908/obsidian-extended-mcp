@@ -35,9 +35,6 @@ export declare class PermissionDeniedError extends FileSystemError {
 export declare class CorruptedCacheError extends FileSystemError {
     constructor(reason: string);
 }
-export declare class BM25IndexCorruptedError extends FileSystemError {
-    constructor();
-}
 export declare class FileNotFoundError extends FileSystemError {
     constructor(path: string);
 }

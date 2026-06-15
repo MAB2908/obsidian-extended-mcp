@@ -5,7 +5,7 @@ import path from 'path';
 import os from 'os';
 import { VaultPool } from '../../src/layers/L1-filesystem/VaultPool.js';
 import { DreamingEngine } from '../../src/layers/L9-dreaming/DreamingEngine.js';
-import { BM25Engine } from '../../src/layers/L4-semantic/BM25Engine.js';
+import { SemanticDatabase } from '../../src/layers/L4-semantic/SemanticDatabase.js';
 
 describe('Graceful Shutdown', () => {
   let tmpDir: string;
@@ -28,8 +28,9 @@ describe('Graceful Shutdown', () => {
     const entry = await pool.addVault(vaultPath);
     await pool.initializeComponents(entry);
 
-    const bm25 = new BM25Engine();
-    const dreaming = await DreamingEngine.create({ vaultPath, vault: entry.vault, bm25 });
+    const semanticDb = new SemanticDatabase(vaultPath);
+    await semanticDb.initSchema();
+    const dreaming = await DreamingEngine.create({ vaultPath, vault: entry.vault, semanticDb });
     (entry as any).dreaming = dreaming;
 
     const closeSpy = vi.spyOn(dreaming, 'close');

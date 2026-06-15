@@ -1,5 +1,5 @@
 // v0.2b:
-import type { IBM25Engine } from '../../../shared/interfaces/IBM25Engine.js';
+import type { SearchResult } from '../../../shared/types.js';
 import type { DreamTopic, MergeCandidate } from '../types.js';
 
 export interface MergeGeneratorOptions {
@@ -9,7 +9,7 @@ export interface MergeGeneratorOptions {
 
 export function generateMergeCandidates(
   topics: DreamTopic[],
-  bm25: IBM25Engine,
+  search: (query: string, limit: number) => SearchResult[],
   opts: MergeGeneratorOptions = {},
 ): MergeCandidate[] {
   const threshold = opts.threshold ?? 0.85;
@@ -19,7 +19,7 @@ export function generateMergeCandidates(
 
   for (const source of topics) {
     const query = `${source.title} ${source.summary}`;
-    const results = bm25.search(query, 5);
+    const results = search(query, 5);
     for (const hit of results) {
       if (hit.path === source.path) continue;
       if (hit.score < threshold) continue;
@@ -36,7 +36,7 @@ export function generateMergeCandidates(
         sourcePath: source.path,
         targetPath: target.path,
         score: hit.score,
-        reason: `High similarity (BM25 ${hit.score.toFixed(2)}) between "${source.title}" and "${target.title}"`,
+        reason: `High similarity (FTS5 ${hit.score.toFixed(2)}) between "${source.title}" and "${target.title}"`,
       });
     }
   }

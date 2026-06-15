@@ -5,7 +5,6 @@ import path from 'path';
 import os from 'os';
 import { VaultPool } from '../src/layers/L1-filesystem/VaultPool.js';
 import { VaultRouter } from '../src/layers/L1-filesystem/VaultRouter.js';
-import { BM25Engine } from '../src/layers/L4-semantic/BM25Engine.js';
 import { SemanticDatabase } from '../src/layers/L4-semantic/SemanticDatabase.js';
 
 describe('VaultRouter', () => {
@@ -52,7 +51,6 @@ describe('VaultRouter', () => {
     const ctx = router.resolve({});
     expect(ctx.vaultPath).toBe(path.join(tempDir, 'vault1'));
     expect(ctx.vault.root).toBe(path.join(tempDir, 'vault1'));
-    expect(ctx.bm25).toBeInstanceOf(BM25Engine);
     expect(ctx.semanticDb).toBeInstanceOf(SemanticDatabase);
   });
 });

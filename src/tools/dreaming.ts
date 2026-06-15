@@ -14,7 +14,7 @@ export function createDreamingTools(
     const engine = await DreamingEngine.create({
       vaultPath: ctx.vaultPath,
       vault: ctx.vault,
-      bm25: ctx.bm25,
+      semanticDb: ctx.semanticDb,
     });
     (ctx as any).dreaming = engine;
     return engine;

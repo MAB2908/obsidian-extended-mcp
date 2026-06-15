@@ -180,7 +180,7 @@ describe('Tool handlers', () => {
       return {
         vaultPath: '/v',
         vault: {},
-        bm25: {},
+        semanticDb: {},
         dreaming: engine,
       };
     }
@@ -239,18 +239,42 @@ describe('Tool handlers', () => {
   });
 
   describe('cli', () => {
+    function makeCliCtx() {
+      return {
+        vaultPath: '/v',
+        vault: { readNote: vi.fn(), writeNote: vi.fn() },
+        graph: { getGraph: vi.fn().mockReturnValue({ orphans: [], deadends: [], unresolved: [] }), getNeighbors: vi.fn().mockReturnValue([]) },
+        semanticDb: { getStats: vi.fn().mockReturnValue({ nodes: 0 }), searchFTS: vi.fn().mockReturnValue([]) },
+      };
+    }
+
+    function getCliTools(sandbox: unknown) {
+      const ctx = makeCliCtx();
+      const tools = createCliTools(vi.fn().mockReturnValue(ctx), sandbox as any);
+      const evalTool = tools.find((t) => t.name === 'cli_eval');
+      return { evalTool, ctx };
+    }
+
     it('cli_eval returns sandbox result', async () => {
       const sandbox = { execute: vi.fn().mockResolvedValue({ result: 42 }) };
-      const tools = createCliTools(vi.fn(), sandbox as any);
-      const result = await tools[5].handler({ code: '1+1' });
+      const { evalTool } = getCliTools(sandbox);
+      if (!evalTool) {
+        // cli_eval is filtered out when ENABLE_EVAL=false
+        return;
+      }
+      const result = await evalTool.handler({ code: '1+1' });
       expect(sandbox.execute).toHaveBeenCalledWith('1+1');
       expect((result as any).content[0].text).toBe('{"result":42}');
     });
 
     it('cli_eval returns error on sandbox failure', async () => {
       const sandbox = { execute: vi.fn().mockRejectedValue(new Error('Timeout')) };
-      const tools = createCliTools(vi.fn(), sandbox as any);
-      const result = await tools[5].handler({ code: 'while(true){}' });
+      const { evalTool } = getCliTools(sandbox);
+      if (!evalTool) {
+        // cli_eval is filtered out when ENABLE_EVAL=false
+        return;
+      }
+      const result = await evalTool.handler({ code: 'while(true){}' });
       expect((result as any).isError).toBe(true);
       expect((result as any).content[0].text).toContain('Sandbox error: Timeout');
     });

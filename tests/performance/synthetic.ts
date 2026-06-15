@@ -29,7 +29,7 @@ export async function generateSyntheticVault(basePath: string, config: VaultConf
 
     const paragraphs = Math.ceil(config.wordsPerNote / 50);
     const body = Array.from({ length: paragraphs }, () => LOREM).join('\n\n');
-    const content = `---\ntitle: "Note ${i}"\ntags: [synthetic, test]\n---\n\n# Note ${i}\n\n${body}\n\n## Links\n${links.join('\n')}\n`;
+    const content = `---\ntitle: "Note ${i}"\ntags: [synthetic, test]\ncreated: ${new Date().toISOString()}\n---\n\n# Note ${i}\n\n${body}\n\n## Links\n${links.join('\n')}\n`;
 
     const fullPath = path.join(basePath, relPath);
     await fs.mkdir(path.dirname(fullPath), { recursive: true });

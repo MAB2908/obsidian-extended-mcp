@@ -2,7 +2,6 @@
 import path from 'path';
 import { VaultManager } from './VaultManager.js';
 import { GraphEngine } from '../L4-semantic/GraphEngine.js';
-import { BM25Engine } from '../L4-semantic/BM25Engine.js';
 import { SemanticDatabase } from '../L4-semantic/SemanticDatabase.js';
 import { FolderACL } from '../../security/FolderACL.js';
 import type { VaultEntry } from '../../shared/types.js';
@@ -66,7 +65,6 @@ export class VaultPool {
       const vaultAcl = acl || new FolderACL();
       const vault = new VaultManager(resolved, vaultAcl, undefined, enforceOntology);
       const graph = new GraphEngine();
-      const bm25 = new BM25Engine();
       const semanticDb = new SemanticDatabase(resolved);
       try {
         await semanticDb.initSchema();
@@ -75,7 +73,7 @@ export class VaultPool {
         throw err;
       }
 
-      const entry: VaultEntry = { vault, graph, bm25, semanticDb, acl: vaultAcl };
+      const entry: VaultEntry = { vault, graph, semanticDb, acl: vaultAcl };
       this.entries.set(resolved, entry);
       return entry;
     })();
@@ -123,7 +121,7 @@ export class VaultPool {
     }
     if (!entry.indexer) {
       const { BackgroundIndexer } = await import('../L4-semantic/BackgroundIndexer.js');
-      entry.indexer = new BackgroundIndexer(entry.vault, entry.graph, entry.bm25, entry.vector, persistence, entry.semanticDb);
+      entry.indexer = new BackgroundIndexer(entry.vault, entry.graph, entry.vector, persistence, entry.semanticDb);
       await entry.indexer.initialize();
     }
   }

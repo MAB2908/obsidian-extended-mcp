@@ -142,11 +142,11 @@ async function main() {
       entry.vector = new VectorEngine(embedProviderArg);
     }
     if (!entry.indexer) {
-      entry.indexer = new BackgroundIndexer(entry.vault, entry.graph, entry.bm25, entry.vector, persistence, entry.semanticDb);
+      entry.indexer = new BackgroundIndexer(entry.vault, entry.graph, entry.vector, persistence, entry.semanticDb);
       await entry.indexer.initialize();
     }
     if (adapter && !entry.pipeline && entry.indexer) {
-      entry.pipeline = new PipelineOrchestrator(entry.vault, entry.graph, entry.bm25, entry.indexer, adapter);
+      entry.pipeline = new PipelineOrchestrator(entry.vault, entry.graph, entry.semanticDb, entry.indexer, adapter);
     }
   }
 

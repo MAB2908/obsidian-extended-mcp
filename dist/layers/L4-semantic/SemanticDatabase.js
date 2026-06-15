@@ -162,6 +162,10 @@ export class SemanticDatabase {
     `).run(nodePath);
     }
     searchFTS(query, limit = 20) {
+        const safeQuery = query
+            .replace(/"/g, '""')
+            .trim();
+        const wrapped = safeQuery ? `"${safeQuery}"` : '';
         const stmt = this.db.prepare(`
       SELECT path, rank, snippet(search_index, 0, '>>>', '<<<', '...', 32) AS snippet
       FROM search_index
@@ -169,7 +173,7 @@ export class SemanticDatabase {
       ORDER BY rank
       LIMIT ?
     `);
-        const rows = stmt.all(query, limit);
+        const rows = stmt.all(wrapped, limit);
         return rows.map((r) => ({ path: r.path, score: 1 / (1 + Math.abs(r.rank)), snippet: r.snippet }));
     }
     searchSimilar(queryVector, model, topK = 10) {

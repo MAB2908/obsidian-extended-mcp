@@ -1,10 +1,10 @@
-export function generateLinkCandidates(topics, bm25, opts = {}) {
+export function generateLinkCandidates(topics, search, opts = {}) {
     const threshold = opts.threshold ?? 0.5;
     const maxCandidates = opts.maxCandidates ?? 20;
     const seen = new Set();
     const candidates = [];
     for (const source of topics) {
-        const results = bm25.search(source.title, 10);
+        const results = search(source.title, 10);
         for (const hit of results) {
             if (hit.path === source.path)
                 continue;
@@ -26,7 +26,7 @@ export function generateLinkCandidates(topics, bm25, opts = {}) {
                 sourcePath: source.path,
                 targetPath: target.path,
                 score: hit.score,
-                reason: `BM25 score ${hit.score.toFixed(2)} on title "${source.title}"`,
+                reason: `FTS5 score ${hit.score.toFixed(2)} on title "${source.title}"`,
             });
         }
     }

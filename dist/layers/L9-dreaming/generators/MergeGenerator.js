@@ -1,11 +1,11 @@
-export function generateMergeCandidates(topics, bm25, opts = {}) {
+export function generateMergeCandidates(topics, search, opts = {}) {
     const threshold = opts.threshold ?? 0.85;
     const maxCandidates = opts.maxCandidates ?? 20;
     const seen = new Set();
     const candidates = [];
     for (const source of topics) {
         const query = `${source.title} ${source.summary}`;
-        const results = bm25.search(query, 5);
+        const results = search(query, 5);
         for (const hit of results) {
             if (hit.path === source.path)
                 continue;
@@ -23,7 +23,7 @@ export function generateMergeCandidates(topics, bm25, opts = {}) {
                 sourcePath: source.path,
                 targetPath: target.path,
                 score: hit.score,
-                reason: `High similarity (BM25 ${hit.score.toFixed(2)}) between "${source.title}" and "${target.title}"`,
+                reason: `High similarity (FTS5 ${hit.score.toFixed(2)}) between "${source.title}" and "${target.title}"`,
             });
         }
     }

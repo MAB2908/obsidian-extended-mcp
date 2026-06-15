@@ -6,7 +6,7 @@ import { IngestAgent, QueryAgent, TagAgent, CompileAgent, LinkAgent, LintAgent, 
 export class PipelineOrchestrator {
     vault;
     graph;
-    bm25;
+    semanticDb;
     indexer;
     ingestAgent;
     queryAgent;
@@ -16,10 +16,10 @@ export class PipelineOrchestrator {
     lintAgent;
     enrichAgent;
     metrics;
-    constructor(vault, graph, bm25, indexer, adapter, metrics) {
+    constructor(vault, graph, semanticDb, indexer, adapter, metrics) {
         this.vault = vault;
         this.graph = graph;
-        this.bm25 = bm25;
+        this.semanticDb = semanticDb;
         this.indexer = indexer;
         this.ingestAgent = new IngestAgent(adapter);
         this.queryAgent = new QueryAgent(adapter);
@@ -64,7 +64,12 @@ export class PipelineOrchestrator {
     }
     async runQuery(question) {
         return this.metrics.measure('query', async () => {
-            const results = this.bm25.search(question, 10);
+            const results = this.semanticDb.searchFTS(question, 10).map((r) => ({
+                path: r.path,
+                score: r.score,
+                snippet: r.snippet ?? '',
+                highlights: [],
+            }));
             const contextNotes = await Promise.all(results.map(async (r) => {
                 const note = await this.vault.readNote(r.path, { includeContent: true });
                 return { path: r.path, title: note.title, snippet: r.snippet || note.content.slice(0, 500) };

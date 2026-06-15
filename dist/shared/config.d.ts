@@ -61,12 +61,6 @@ export declare const semanticConfig: {
     readonly embedModel: string;
     /** Ollama embedding model */
     readonly ollamaEmbedModel: string;
-    /** BM25 parameter k1 */
-    readonly bm25K1: number;
-    /** BM25 parameter b */
-    readonly bm25B: number;
-    /** Default BM25 search limit */
-    readonly bm25DefaultLimit: number;
     /** RRF fusion constant K */
     readonly rrfK: number;
     /** Graph PageRank iterations */

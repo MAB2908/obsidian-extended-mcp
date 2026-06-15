@@ -1,5 +1,5 @@
 import type { IVaultManager } from '../../shared/interfaces/IVaultManager.js';
-import type { IBM25Engine } from '../../shared/interfaces/IBM25Engine.js';
+import type { ISemanticDatabase } from '../../shared/interfaces/ISemanticDatabase.js';
 import type { IDreamingEngine } from '../../shared/interfaces/IDreamingEngine.js';
 import { SignalStore } from './SignalStore.js';
 import type { AuditLogger } from '../../security/AuditLogger.js';
@@ -7,14 +7,14 @@ import type { DreamScanParams, DreamFinalizeParams, DreamSession, DreamSignals }
 export interface DreamingEngineConfig {
     vaultPath: string;
     vault: IVaultManager;
-    bm25: IBM25Engine;
+    semanticDb: ISemanticDatabase;
     signals: SignalStore;
     audit?: AuditLogger;
 }
 export declare class DreamingEngine implements IDreamingEngine {
     private vaultPath;
     private vault;
-    private bm25;
+    private semanticDb;
     private signals;
     private log;
     private loader;

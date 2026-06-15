@@ -1,7 +1,6 @@
 // v0.2b:
 import type { IVaultManager } from '../../shared/interfaces/IVaultManager.js';
 import type { IGraphEngine } from '../../shared/interfaces/IGraphEngine.js';
-import type { IBM25Engine } from '../../shared/interfaces/IBM25Engine.js';
 import type { IVectorEngine } from '../../shared/interfaces/IVectorEngine.js';
 import type { ISemanticDatabase } from '../../shared/interfaces/ISemanticDatabase.js';
 import type { IBackgroundIndexer } from '../../shared/interfaces/IBackgroundIndexer.js';
@@ -22,7 +21,6 @@ export class BackgroundIndexer implements IBackgroundIndexer {
   constructor(
     private vault: IVaultManager,
     private graph: IGraphEngine,
-    private bm25: IBM25Engine,
     private vector?: IVectorEngine,
     private persistence?: IndexPersistence,
     private semanticDb?: ISemanticDatabase
@@ -30,7 +28,7 @@ export class BackgroundIndexer implements IBackgroundIndexer {
 
   async initialize(): Promise<void> {
     if (this.persistence) {
-      const loaded = await this.persistence.load(this.graph, this.bm25, this.vector);
+      const loaded = await this.persistence.load(this.graph, this.vector);
       if (!loaded) {
         this.markAllDirty();
       } else if (this.vector && this.semanticDb && this.vector.getStats().totalVectors === 0) {
@@ -201,7 +199,6 @@ export class BackgroundIndexer implements IBackgroundIndexer {
     for (let i = 0; i < noteData.length; i++) {
       const data = noteData[i];
       if (i % 50 === 0) await this.yieldEventLoop();
-      this.bm25.addDoc(data.relPath, `${data.title} ${data.content}`);
       this.graph.addNode({
         path: data.relPath,
         title: data.title,
@@ -298,7 +295,7 @@ export class BackgroundIndexer implements IBackgroundIndexer {
     }
 
     if (this.persistence) {
-      await this.persistence.save(this.graph, this.bm25, this.vector);
+      await this.persistence.save(this.graph, this.vector);
     }
     } catch (err) {
       // Re-queue all files from this batch for retry (BI-001)
