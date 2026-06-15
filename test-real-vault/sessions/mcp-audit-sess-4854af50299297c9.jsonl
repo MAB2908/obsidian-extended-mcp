@@ -1,0 +1,22 @@
+{"event":"auth","tool":"read_note","message":"index.md","level":"info","args":{"approvalLevel":1},"timestamp":"2026-06-15T16:40:54.354Z","sessionId":"sess-4854af50299297c9"}
+{"event":"tool_call","tool":"read_note","args":{"path":"index.md"},"result":"success","durationMs":1,"timestamp":"2026-06-15T16:40:54.355Z","sessionId":"sess-4854af50299297c9"}
+{"event":"auth","tool":"search_notes","message":"","level":"info","args":{"approvalLevel":1},"timestamp":"2026-06-15T16:40:54.358Z","sessionId":"sess-4854af50299297c9"}
+{"event":"tool_call","tool":"search_notes","args":{"query":"artificial intelligence","limit":10},"result":"success","durationMs":1,"timestamp":"2026-06-15T16:40:54.359Z","sessionId":"sess-4854af50299297c9"}
+{"event":"auth","tool":"build_index","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-06-15T16:40:54.361Z","sessionId":"sess-4854af50299297c9"}
+{"event":"tool_call","tool":"build_index","args":{},"result":"success","durationMs":0,"timestamp":"2026-06-15T16:40:54.361Z","sessionId":"sess-4854af50299297c9"}
+{"event":"auth","tool":"semantic_search_db","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-06-15T16:40:57.374Z","sessionId":"sess-4854af50299297c9"}
+{"event":"tool_call","tool":"semantic_search_db","args":{"query":"machine learning","limit":5},"result":"success","durationMs":0,"timestamp":"2026-06-15T16:40:57.374Z","sessionId":"sess-4854af50299297c9"}
+{"event":"auth","tool":"graph_neighbors","message":"AI Research.md","level":"info","args":{"approvalLevel":8},"timestamp":"2026-06-15T16:40:57.376Z","sessionId":"sess-4854af50299297c9"}
+{"event":"tool_call","tool":"graph_neighbors","args":{"path":"AI Research.md","direction":"both"},"result":"success","durationMs":0,"timestamp":"2026-06-15T16:40:57.376Z","sessionId":"sess-4854af50299297c9"}
+{"event":"auth","tool":"write_note","message":"New Note.md","level":"info","args":{"approvalLevel":3},"timestamp":"2026-06-15T16:40:57.377Z","sessionId":"sess-4854af50299297c9"}
+{"event":"tool_call","tool":"write_note","args":{"path":"New Note.md","content":"# ***.\n"},"result":"success","durationMs":4,"timestamp":"2026-06-15T16:40:57.381Z","sessionId":"sess-4854af50299297c9"}
+{"event":"auth","tool":"patch_note","message":"New Note.md","level":"info","args":{"approvalLevel":3},"timestamp":"2026-06-15T16:40:57.383Z","sessionId":"sess-4854af50299297c9"}
+{"event":"tool_call","tool":"patch_note","args":{"path":"New Note.md","operation":"append","target":"end","replacement":"\nAppended line.\n"},"result":"success","durationMs":3,"timestamp":"2026-06-15T16:40:57.386Z","sessionId":"sess-4854af50299297c9"}
+{"event":"auth","tool":"move_note","message":"New Note.md","level":"info","args":{"approvalLevel":4},"timestamp":"2026-06-15T16:40:57.890Z","sessionId":"sess-4854af50299297c9"}
+{"event":"tool_call","tool":"move_note","args":{"from":"New Note.md","to":"renamed/New Note.md"},"result":"success","durationMs":5,"timestamp":"2026-06-15T16:40:57.895Z","sessionId":"sess-4854af50299297c9"}
+{"event":"auth","tool":"audit_log","message":"","level":"info","args":{"approvalLevel":8},"timestamp":"2026-06-15T16:40:57.897Z","sessionId":"sess-4854af50299297c9"}
+{"event":"tool_call","tool":"audit_log","args":{"query":"write_note","limit":10},"result":"success","durationMs":0,"timestamp":"2026-06-15T16:40:57.897Z","sessionId":"sess-4854af50299297c9"}
+{"event":"auth","tool":"delete_note","message":"Web App.md","level":"info","args":{"approvalLevel":4},"timestamp":"2026-06-15T16:40:57.898Z","sessionId":"sess-4854af50299297c9"}
+{"event":"tool_call","tool":"delete_note","args":{"path":"Web App.md","soft":true},"result":"success","durationMs":2,"timestamp":"2026-06-15T16:40:57.900Z","sessionId":"sess-4854af50299297c9"}
+{"event":"auth","tool":"rest_get_note","message":"index.md","level":"info","args":{"approvalLevel":8},"timestamp":"2026-06-15T16:40:57.901Z","sessionId":"sess-4854af50299297c9"}
+{"event":"tool_call","tool":"rest_get_note","args":{"path":"index.md"},"result":"success","durationMs":8,"timestamp":"2026-06-15T16:40:57.909Z","sessionId":"sess-4854af50299297c9"}
