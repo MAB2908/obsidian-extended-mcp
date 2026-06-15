@@ -52,8 +52,8 @@ Obsidian Desktop: закрыт
 |---------|--------|------------|
 | `build_index` | ✅ | Запускает полную переиндексацию |
 | `db_stats` | ✅ | nodes: 12591, edges: 12135, chunks: 35836, embeddings: 35836 |
-| `bm25_search` | ✅ | Возвращает BM25-результаты |
-| `semantic_search` | ✅ | RRF из BM25 + векторного поиска |
+| `bm25_search` | ✅ | Возвращает FTS5-результаты из SQLite |
+| `semantic_search` | ✅ | RRF из FTS5 + векторного поиска |
 | `semantic_search_db` | ✅ | Работает после смены FTS5 tokenizer на `unicode61` |
 | `semantic_rag` | ✅ | Возвращает релевантные чанки |
 

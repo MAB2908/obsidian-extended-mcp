@@ -25,11 +25,7 @@ export class OllamaEmbeddingProvider {
             return [];
         const batchSize = 32;
         const maxChars = 2000;
-        const truncated = texts.map((t) => {
-            if (t.length <= maxChars)
-                return t;
-            return t.slice(0, maxChars);
-        });
+        const truncated = texts.map((t) => (t.length <= maxChars ? t : t.slice(0, maxChars)));
         const results = [];
         for (let i = 0; i < truncated.length; i += batchSize) {
             const batch = truncated.slice(i, i + batchSize);

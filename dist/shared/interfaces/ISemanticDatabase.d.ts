@@ -16,5 +16,21 @@ export interface ISemanticDatabase {
         chunks: number;
         embeddings: number;
     };
+    clearAll(): void;
+    bulkIndex(nodes: DbNode[], edges: DbEdge[], chunks: Array<DbChunk & {
+        id?: number;
+    }>): number[];
+    bulkUpdateFTS(ftsContents: Array<{
+        path: string;
+        title?: string;
+        content: string;
+    }>): void;
+    getAllEmbeddings(model: string): Array<{
+        chunkId: number;
+        nodePath: string;
+        chunkIndex: number;
+        vector: Float32Array;
+        dimensions: number;
+    }>;
 }
 //# sourceMappingURL=ISemanticDatabase.d.ts.map

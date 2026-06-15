@@ -9,6 +9,7 @@ export interface IVectorEngine {
   serialize(): unknown;
   load(data: unknown): void;
   getStats(): { totalVectors: number; dimensions: number };
-  getVector(id: string): number[] | undefined;
+  getVector(id: string): Float32Array | number[] | undefined;
+  setVector(id: string, vector: Float32Array | number[]): void;
   readonly modelName: string;
 }

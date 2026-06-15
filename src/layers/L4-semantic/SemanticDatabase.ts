@@ -107,7 +107,7 @@ export class SemanticDatabase implements ISemanticDatabase {
         path,
         title,
         content,
-        tokenize = 'porter'
+        tokenize = 'unicode61'
       );
     `);
 
@@ -116,27 +116,19 @@ export class SemanticDatabase implements ISemanticDatabase {
     this.db.exec(`CREATE INDEX IF NOT EXISTS idx_chunks_node ON chunks(node_path);`);
     this.db.exec(`CREATE INDEX IF NOT EXISTS idx_nodes_path ON nodes(path);`);
 
-    this.db.exec(`
-      CREATE TRIGGER IF NOT EXISTS nodes_fts_insert AFTER INSERT ON nodes
-      BEGIN
-        INSERT INTO search_index(path, title, content)
-        VALUES (NEW.path, NEW.title, '');
-      END;
-    `);
+    // FTS is maintained explicitly via bulkUpdateFTS; drop legacy triggers if present
+    this.db.exec(`DROP TRIGGER IF EXISTS nodes_fts_insert;`);
+    this.db.exec(`DROP TRIGGER IF EXISTS nodes_fts_update;`);
+    this.db.exec(`DROP TRIGGER IF EXISTS nodes_fts_delete;`);
+  }
 
-    this.db.exec(`
-      CREATE TRIGGER IF NOT EXISTS nodes_fts_update AFTER UPDATE ON nodes
-      BEGIN
-        UPDATE search_index SET title = NEW.title WHERE path = NEW.path;
-      END;
-    `);
-
-    this.db.exec(`
-      CREATE TRIGGER IF NOT EXISTS nodes_fts_delete AFTER DELETE ON nodes
-      BEGIN
-        DELETE FROM search_index WHERE path = OLD.path;
-      END;
-    `);
+  private createFTSTable(): void {
+    this.db.exec(`CREATE VIRTUAL TABLE IF NOT EXISTS search_index USING fts5(
+      path,
+      title,
+      content,
+      tokenize = 'unicode61'
+    );`);
   }
 
   upsertNode(node: DbNode): void {
@@ -285,6 +277,108 @@ export class SemanticDatabase implements ISemanticDatabase {
 
   close(): void {
     this.db.close();
+  }
+
+  bulkIndex(nodes: DbNode[], edges: DbEdge[], chunks: Array<DbChunk & { id?: number }>): number[] {
+    const upsertNodeStmt = this.db.prepare(`
+      INSERT INTO nodes (path, title, content_hash, word_count)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(path) DO UPDATE SET
+        title = excluded.title,
+        content_hash = excluded.content_hash,
+        word_count = excluded.word_count,
+        updated_at = CURRENT_TIMESTAMP
+    `);
+    const upsertEdgeStmt = this.db.prepare(`
+      INSERT INTO edges (from_path, to_path, type, context)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(from_path, to_path, type) DO UPDATE SET
+        context = excluded.context
+    `);
+    const upsertChunkStmt = this.db.prepare(`
+      INSERT INTO chunks (node_path, chunk_index, heading, content, token_count)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(node_path, chunk_index) DO UPDATE SET
+        heading = excluded.heading,
+        content = excluded.content,
+        token_count = excluded.token_count
+    `);
+    const batchSize = 500;
+    const chunkIds: number[] = [];
+    console.error(`[SemanticDatabase] bulkIndex start: nodes=${nodes.length}, edges=${edges.length}, chunks=${chunks.length}`);
+    const nodeTx = this.db.transaction((batch: DbNode[]) => {
+      for (const node of batch) upsertNodeStmt.run(node.path, node.title, node.contentHash, node.wordCount);
+    });
+    const edgeTx = this.db.transaction((batch: DbEdge[]) => {
+      for (const edge of batch) upsertEdgeStmt.run(edge.fromPath, edge.toPath, edge.type, edge.context ?? null);
+    });
+    const chunkTx = this.db.transaction((batch: Array<DbChunk & { id?: number }>) => {
+      for (const chunk of batch) {
+        const info = upsertChunkStmt.run(chunk.nodePath, chunk.chunkIndex, chunk.heading ?? null, chunk.content, chunk.tokenCount ?? null);
+        chunk.id = Number(info.lastInsertRowid);
+        chunkIds.push(chunk.id);
+      }
+    });
+    console.error('[SemanticDatabase] inserting nodes...');
+    for (let i = 0; i < nodes.length; i += batchSize) {
+      nodeTx(nodes.slice(i, i + batchSize));
+    }
+    console.error('[SemanticDatabase] inserting edges...');
+    for (let i = 0; i < edges.length; i += batchSize) {
+      edgeTx(edges.slice(i, i + batchSize));
+    }
+    console.error('[SemanticDatabase] inserting chunks...');
+    for (let i = 0; i < chunks.length; i += batchSize) {
+      chunkTx(chunks.slice(i, i + batchSize));
+    }
+    console.error('[SemanticDatabase] bulkIndex done');
+    return chunkIds;
+  }
+
+  clearAll(): void {
+    console.error('[SemanticDatabase] clearAll start');
+    this.db.exec('DELETE FROM embeddings');
+    this.db.exec('DELETE FROM chunks');
+    this.db.exec('DELETE FROM edges');
+    this.db.exec('DELETE FROM nodes');
+    console.error('[SemanticDatabase] clearAll done');
+  }
+
+  bulkUpdateFTS(ftsContents: Array<{ path: string; title?: string; content: string }>): void {
+    this.db.exec('DROP TABLE IF EXISTS search_index;');
+    this.createFTSTable();
+    const insertFtsStmt = this.db.prepare(`INSERT INTO search_index(path, title, content) VALUES (?, ?, ?)`);
+    const batchSize = 1000;
+    const tx = this.db.transaction((batch: Array<{ path: string; title?: string; content: string }>) => {
+      for (const fts of batch) {
+        insertFtsStmt.run(fts.path, fts.title ?? '', fts.content);
+      }
+    });
+    for (let i = 0; i < ftsContents.length; i += batchSize) {
+      tx(ftsContents.slice(i, i + batchSize));
+    }
+  }
+
+  getAllEmbeddings(model: string): Array<{ chunkId: number; nodePath: string; chunkIndex: number; vector: Float32Array; dimensions: number }> {
+    const rows = this.db.prepare(`
+      SELECT e.chunk_id, e.vector, e.dimensions, c.node_path, c.chunk_index
+      FROM embeddings e
+      JOIN chunks c ON c.id = e.chunk_id
+      WHERE e.model = ?
+    `).all(model) as Array<{
+      chunk_id: number; vector: Buffer; dimensions: number; node_path: string; chunk_index: number;
+    }>;
+    return rows.map((r) => {
+      const buf = Buffer.from(r.vector);
+      const vec = new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4);
+      return {
+        chunkId: r.chunk_id,
+        nodePath: r.node_path,
+        chunkIndex: r.chunk_index,
+        vector: vec,
+        dimensions: r.dimensions,
+      };
+    });
   }
 }
 

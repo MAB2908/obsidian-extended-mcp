@@ -19,4 +19,14 @@ export interface ISemanticDatabase {
   close(): void;
   searchFTS(query: string, limit?: number): FTSSearchResult[];
   getStats(): { nodes: number; edges: number; chunks: number; embeddings: number };
+  clearAll(): void;
+  bulkIndex(nodes: DbNode[], edges: DbEdge[], chunks: Array<DbChunk & { id?: number }>): number[];
+  bulkUpdateFTS(ftsContents: Array<{ path: string; title?: string; content: string }>): void;
+  getAllEmbeddings(model: string): Array<{
+    chunkId: number;
+    nodePath: string;
+    chunkIndex: number;
+    vector: Float32Array;
+    dimensions: number;
+  }>;
 }

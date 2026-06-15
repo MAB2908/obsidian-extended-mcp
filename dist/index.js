@@ -240,7 +240,7 @@ async function main() {
             }
         }
     }
-    const server = new Server({ name: 'obsidian-extended-mcp', version: '0.3.0' }, { capabilities: { tools: {} } });
+    const server = new Server({ name: 'obsidian-extended-mcp', version: '0.3.1' }, { capabilities: { tools: {} } });
     server.setRequestHandler(ListToolsRequestSchema, async () => {
         return {
             tools: dispatcher.listTools().map((t) => ({
@@ -252,7 +252,7 @@ async function main() {
     });
     // Serialize tool calls so that write→read operations in the same session
     // are processed in order. The MCP SDK may dispatch requests concurrently.
-    let toolQueue = Promise.resolve();
+    let toolQueue = Promise.resolve({ content: [] });
     server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return toolQueue = toolQueue.then(async () => {
             const { name, arguments: args } = request.params;

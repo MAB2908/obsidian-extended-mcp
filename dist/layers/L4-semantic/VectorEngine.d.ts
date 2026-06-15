@@ -12,14 +12,15 @@ export declare class VectorEngine implements IVectorEngine {
     }>): Promise<void>;
     removeDoc(id: string): void;
     search(query: string, limit?: number): Promise<SearchResult[]>;
-    getVectors(): Map<string, number[]>;
+    getVectors(): Map<string, Float32Array | number[]>;
     getStats(): {
         totalVectors: number;
         dimensions: number;
     };
     serialize(): Record<string, number[]>;
     load(data: Record<string, number[]>): void;
-    getVector(id: string): number[] | undefined;
+    getVector(id: string): Float32Array | number[] | undefined;
+    setVector(id: string, vector: Float32Array | number[]): void;
     get modelName(): string;
 }
 //# sourceMappingURL=VectorEngine.d.ts.map

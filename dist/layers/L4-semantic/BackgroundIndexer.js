@@ -250,7 +250,7 @@ export class BackgroundIndexer {
                 }
                 console.error(`[BackgroundIndexer] Bulk write done, updating FTS for ${dbFts.length} notes...`);
                 this.semanticDb.bulkUpdateFTS(dbFts);
-                console.error(`[BackgroundIndexer] FTS update done`);
+                console.error('[BackgroundIndexer] FTS update done');
             }
             if (this.vector && chunkVectorDocs.length > 0) {
                 try {

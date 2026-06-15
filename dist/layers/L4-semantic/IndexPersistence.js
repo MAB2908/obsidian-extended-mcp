@@ -8,7 +8,7 @@ export class IndexPersistence {
     constructor(vaultPath, cacheDir = '.mcp-cache') {
         this.cacheDir = path.join(vaultPath, cacheDir);
     }
-    async save(graph, bm25, vector) {
+    async save(graph, bm25, _vector) {
         await fs.mkdir(this.cacheDir, { recursive: true });
         const metaTmp = path.join(this.cacheDir, 'index-meta.json.tmp');
         const metaDest = path.join(this.cacheDir, 'index-meta.json');
@@ -25,10 +25,10 @@ export class IndexPersistence {
         await fs.rename(bm25Tmp, bm25Dest);
         // Vector embeddings are persisted in SQLite via SemanticDatabase; skip huge JSON cache
         // if (vector) {
-        //     const vectorTmp = path.join(this.cacheDir, 'index-vector.json.tmp');
-        //     const vectorDest = path.join(this.cacheDir, 'index-vector.json');
-        //     await fs.writeFile(vectorTmp, JSON.stringify(vector.serialize()));
-        //     await fs.rename(vectorTmp, vectorDest);
+        //   const vectorTmp = path.join(this.cacheDir, 'index-vector.json.tmp');
+        //   const vectorDest = path.join(this.cacheDir, 'index-vector.json');
+        //   await fs.writeFile(vectorTmp, JSON.stringify(vector.serialize()));
+        //   await fs.rename(vectorTmp, vectorDest);
         // }
     }
     async load(graph, bm25, vector) {

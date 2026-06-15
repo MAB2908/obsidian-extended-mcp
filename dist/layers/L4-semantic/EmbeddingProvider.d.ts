@@ -5,7 +5,7 @@ export interface EmbeddingProvider {
 }
 export declare class OllamaEmbeddingProvider implements EmbeddingProvider {
     readonly name = "ollama-embed";
-    private baseUrl;
+    readonly baseUrl: string;
     private model;
     constructor(baseUrl?: string, model?: string);
     isAvailable(): Promise<boolean>;

@@ -9,6 +9,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  type CallToolResult,
 } from '@modelcontextprotocol/sdk/types.js';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -126,6 +127,7 @@ async function main() {
     embedProvider = llmConfig.openAiKey
       ? new OpenAIEmbeddingProvider(llmConfig.openAiKey, semanticConfig.embedModel)
       : new OllamaEmbeddingProvider(process.env.OLLAMA_EMBED_BASE_URL || llmConfig.ollamaBaseUrl, semanticConfig.ollamaEmbedModel);
+    console.error(`[Semantic] Embedding provider: ${embedProvider?.name}, model: ${semanticConfig.ollamaEmbedModel}, baseUrl: ${(embedProvider as { baseUrl?: string } | undefined)?.baseUrl ?? (process.env.OLLAMA_EMBED_BASE_URL || llmConfig.ollamaBaseUrl)}`);
   }
 
   const persistence = multiVault ? undefined : new IndexPersistence(vaultPath);
@@ -151,6 +153,11 @@ async function main() {
   await initializeVaultEntry(defaultEntry, embedProvider, undefined);
 
   const adapter = new LLMAdapter(llmConfig.defaultProvider);
+
+  // Model-Aware Backup System (MABS) must be attached before providers register their profiles
+  const mabs = new ModelAwareBackupService(vaultPath);
+  await mabs.initialize();
+  adapter.attachBackupService(mabs);
 
   if (openAiKey) {
     adapter.registerProvider(
@@ -193,11 +200,6 @@ async function main() {
   // L7: 4-Level Dev System
   const devSystem = new DevSystemEngine(defaultEntry.vault);
   await devSystem.initialize();
-
-  // Model-Aware Backup System (MABS)
-  const mabs = new ModelAwareBackupService(vaultPath);
-  await mabs.initialize();
-  adapter.attachBackupService(mabs);
   devSystem.attachBackupService(mabs);
 
   // BatchEditGuard is created per-vault on demand
@@ -296,7 +298,7 @@ async function main() {
   }
 
   const server = new Server(
-    { name: 'obsidian-extended-mcp', version: '0.3.0' },
+    { name: 'obsidian-extended-mcp', version: '0.3.1' },
     { capabilities: { tools: {} } }
   );
 
@@ -312,7 +314,7 @@ async function main() {
 
   // Serialize tool calls so that write→read operations in the same session
   // are processed in order. The MCP SDK may dispatch requests concurrently.
-  let toolQueue: Promise<unknown> = Promise.resolve();
+  let toolQueue: Promise<CallToolResult> = Promise.resolve({ content: [] });
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     return toolQueue = toolQueue.then(async () => {
       const { name, arguments: args } = request.params;
@@ -323,7 +325,7 @@ async function main() {
           return { content: [{ type: 'text', text: `Security blocked: ${auth.reason}` }], isError: true };
         }
         const result = await dispatcher.call(name, args);
-        return result as { content: Array<{ type: string; text: string }> };
+        return result as CallToolResult;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         audit.log({ event: 'error', tool: name, message, blocked: false });

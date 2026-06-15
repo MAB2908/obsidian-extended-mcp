@@ -4,7 +4,7 @@ import type { IVectorEngine } from '../../shared/interfaces/IVectorEngine.js';
 export declare class IndexPersistence {
     private cacheDir;
     constructor(vaultPath: string, cacheDir?: string);
-    save(graph: IGraphEngine, bm25: IBM25Engine, vector?: IVectorEngine): Promise<void>;
+    save(graph: IGraphEngine, bm25: IBM25Engine, _vector?: IVectorEngine): Promise<void>;
     load(graph: IGraphEngine, bm25: IBM25Engine, vector?: IVectorEngine): Promise<boolean>;
     clear(): Promise<void>;
 }

@@ -20,7 +20,6 @@ export declare class BM25Engine implements IBM25Engine {
     load(data: {
         docs: Record<string, {
             id: string;
-            tokens: string[];
             termFreq: [string, number][];
             docLen: number;
         }>;

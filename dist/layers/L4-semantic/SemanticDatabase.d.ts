@@ -34,6 +34,7 @@ export declare class SemanticDatabase implements ISemanticDatabase {
     private dbPath;
     constructor(vaultPath: string);
     initSchema(): Promise<void>;
+    private createFTSTable;
     upsertNode(node: DbNode): void;
     deleteNode(path: string): void;
     getNode(path: string): DbNode | undefined;
@@ -58,5 +59,21 @@ export declare class SemanticDatabase implements ISemanticDatabase {
         embeddings: number;
     };
     close(): void;
+    bulkIndex(nodes: DbNode[], edges: DbEdge[], chunks: Array<DbChunk & {
+        id?: number;
+    }>): number[];
+    clearAll(): void;
+    bulkUpdateFTS(ftsContents: Array<{
+        path: string;
+        title?: string;
+        content: string;
+    }>): void;
+    getAllEmbeddings(model: string): Array<{
+        chunkId: number;
+        nodePath: string;
+        chunkIndex: number;
+        vector: Float32Array;
+        dimensions: number;
+    }>;
 }
 //# sourceMappingURL=SemanticDatabase.d.ts.map

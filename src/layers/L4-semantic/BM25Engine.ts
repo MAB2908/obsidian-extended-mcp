@@ -90,9 +90,10 @@ export class BM25Engine implements IBM25Engine {
   }
 
   serialize(): unknown {
-    const docs: Record<string, { id: string; tokens: string[]; termFreq: [string, number][]; docLen: number }> = {};
+    const docs: Record<string, { id: string; termFreq: [string, number][]; docLen: number }> = {};
     for (const [k, v] of this.docs) {
-      docs[k] = { id: v.id, tokens: v.tokens, termFreq: [...v.termFreq], docLen: v.docLen };
+      // Store only term frequencies, not the full token array, to keep cache small
+      docs[k] = { id: v.id, termFreq: [...v.termFreq], docLen: v.docLen };
     }
     const inverted: Record<string, string[]> = {};
     for (const [k, v] of this.inverted) {
@@ -102,7 +103,7 @@ export class BM25Engine implements IBM25Engine {
   }
 
   load(data: {
-    docs: Record<string, { id: string; tokens: string[]; termFreq: [string, number][]; docLen: number }>;
+    docs: Record<string, { id: string; termFreq: [string, number][]; docLen: number }>;
     inverted: Record<string, string[]>;
     avgDocLen: number;
     totalDocLen: number;
@@ -112,7 +113,15 @@ export class BM25Engine implements IBM25Engine {
     this.docs.clear();
     this.inverted.clear();
     for (const [k, v] of Object.entries(data.docs)) {
-      this.docs.set(k, { id: v.id, tokens: v.tokens, termFreq: new Map(v.termFreq), docLen: v.docLen });
+      const termFreq = new Map(v.termFreq);
+      // Reconstruct token list from term frequencies so removeDoc can maintain the inverted index
+      const tokens: string[] = [];
+      for (const [term, count] of termFreq) {
+        for (let i = 0; i < count; i++) {
+          tokens.push(term);
+        }
+      }
+      this.docs.set(k, { id: v.id, tokens, termFreq, docLen: v.docLen });
     }
     for (const [k, v] of Object.entries(data.inverted)) {
       this.inverted.set(k, new Set(v));

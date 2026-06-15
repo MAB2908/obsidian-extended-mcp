@@ -57,7 +57,7 @@ export class VectorEngine {
     serialize() {
         const obj = {};
         for (const [k, v] of this.vectors) {
-            obj[k] = v;
+            obj[k] = Array.from(v);
         }
         return obj;
     }

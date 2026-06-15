@@ -8,7 +8,7 @@ export function createSemanticTools(resolveVault: (args: Record<string, unknown>
   return [
     {
       name: 'bm25_search',
-      description: 'BM25 full-text search over indexed notes',
+      description: 'Full-text search over indexed notes via SQLite FTS5',
       inputSchema: {
         type: 'object',
         properties: { query: { type: 'string' }, limit: { type: 'number' }, vaultPath: { type: 'string', description: 'Optional vault path (multi-vault mode)' } },
@@ -17,7 +17,12 @@ export function createSemanticTools(resolveVault: (args: Record<string, unknown>
       handler: async (args) => {
         const { query, limit } = args as { query: string; limit?: number };
         const ctx = resolveVault(args as Record<string, unknown>);
-        const results = ctx.bm25.search(query, limit);
+        const results = ctx.semanticDb.searchFTS(query, limit ?? 20).map((r) => ({
+          path: r.path,
+          score: r.score,
+          snippet: r.snippet ?? '',
+          highlights: [],
+        }));
         return { content: [{ type: 'text', text: JSON.stringify(results) }] };
       },
     },
@@ -92,7 +97,12 @@ export function createSemanticTools(resolveVault: (args: Record<string, unknown>
       handler: async (args) => {
         const { query, limit } = args as { query: string; limit?: number };
         const ctx = resolveVault(args as Record<string, unknown>);
-        const keywordResults = ctx.bm25.search(query, limit ?? semanticConfig.semanticSearchLimit);
+        const keywordResults = ctx.semanticDb.searchFTS(query, limit ?? semanticConfig.semanticSearchLimit).map((r) => ({
+          path: r.path,
+          score: r.score,
+          snippet: r.snippet ?? '',
+          highlights: [],
+        }));
         if (!ctx.vector) {
           return { content: [{ type: 'text', text: JSON.stringify(keywordResults) }] };
         }
@@ -145,8 +155,13 @@ export function createSemanticTools(resolveVault: (args: Record<string, unknown>
         let docs;
         let warning: string | undefined;
         if (!ctx.vector) {
-          warning = 'Vector engine not enabled. Falling back to BM25 keyword search. To enable semantic RAG, set SEMANTIC_ENABLED=true and provide OPENAI_API_KEY or OLLAMA_BASE_URL.';
-          docs = ctx.bm25.search(query, top_k ?? semanticConfig.semanticRagTopK);
+          warning = 'Vector engine not enabled. Falling back to FTS5 keyword search. To enable semantic RAG, set SEMANTIC_ENABLED=true and provide OPENAI_API_KEY or OLLAMA_BASE_URL.';
+          docs = ctx.semanticDb.searchFTS(query, top_k ?? semanticConfig.semanticRagTopK).map((r) => ({
+            path: r.path,
+            score: r.score,
+            snippet: r.snippet ?? '',
+            highlights: [],
+          }));
         } else {
           docs = await ctx.vector.search(query, top_k ?? 5);
         }

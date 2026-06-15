@@ -4,7 +4,7 @@ import type { SearchResult } from '../../shared/types.js';
 import type { EmbeddingProvider } from './EmbeddingProvider.js';
 
 export class VectorEngine implements IVectorEngine {
-  private vectors = new Map<string, number[]>();
+  private vectors = new Map<string, Float32Array | number[]>();
   private provider: EmbeddingProvider;
 
   constructor(provider: EmbeddingProvider) {
@@ -56,12 +56,12 @@ export class VectorEngine implements IVectorEngine {
     }));
   }
 
-  getVectors(): Map<string, number[]> {
+  getVectors(): Map<string, Float32Array | number[]> {
     return new Map(this.vectors);
   }
 
   getStats(): { totalVectors: number; dimensions: number } {
-    const first = this.vectors.values().next().value as number[] | undefined;
+    const first = this.vectors.values().next().value as Float32Array | number[] | undefined;
     return {
       totalVectors: this.vectors.size,
       dimensions: first?.length ?? 0,
@@ -71,7 +71,7 @@ export class VectorEngine implements IVectorEngine {
   serialize(): Record<string, number[]> {
     const obj: Record<string, number[]> = {};
     for (const [k, v] of this.vectors) {
-      obj[k] = v;
+      obj[k] = Array.from(v);
     }
     return obj;
   }
@@ -83,8 +83,12 @@ export class VectorEngine implements IVectorEngine {
     }
   }
 
-  getVector(id: string): number[] | undefined {
+  getVector(id: string): Float32Array | number[] | undefined {
     return this.vectors.get(id);
+  }
+
+  setVector(id: string, vector: Float32Array | number[]): void {
+    this.vectors.set(id, vector);
   }
 
   get modelName(): string {
@@ -92,7 +96,7 @@ export class VectorEngine implements IVectorEngine {
   }
 }
 
-function cosineSimilarity(a: number[], b: number[]): number {
+function cosineSimilarity(a: Float32Array | number[], b: Float32Array | number[]): number {
   if (a.length !== b.length) {
     throw new Error(`Dimension mismatch: ${a.length} vs ${b.length}`);
   }

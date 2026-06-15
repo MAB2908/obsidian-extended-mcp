@@ -14,6 +14,7 @@ export declare class OllamaProvider implements LLMProvider {
     get model(): string;
     constructor(config: OllamaConfig);
     private headers;
+    private isCloud;
     isAvailable(): Promise<boolean>;
     generate<T>(request: LLMRequest): Promise<AIResult<T>>;
 }

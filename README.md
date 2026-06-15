@@ -1,8 +1,8 @@
-# Obsidian Extended MCP v0.3.0
+# Obsidian Extended MCP v0.3.1
 
 AI-first Knowledge Base Server integrating Obsidian with MCP clients.
 
-> **v0.3.0** — Ollama Cloud + local embeddings integration is now stable. Fixed concurrent tool-call ordering, switched FTS5 to `unicode61` for Russian text, reduced prompt size for `ai_link`, and added a full MCP checklist.
+> **v0.3.1** — `src/` is now in sync with `dist/`, `npm run build` is safe, and `bm25_search` / `semantic_search` run on SQLite FTS5 instead of in-memory BM25. Includes all v0.3.0 fixes: Ollama Cloud, concurrent tool-call ordering, `unicode61` FTS5, `ai_link` prompt limits, and the MCP checklist.
 >
 > **v0.2.0-beta.3** — Batch AI linking (`ai_link_batch`) with Ollama Cloud reliability fixes. `Connection: close` header prevents socket reuse errors on sequential requests. LinkAgent now targets all note titles (not just `concepts/`).
 >

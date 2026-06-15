@@ -145,24 +145,28 @@ describe('Tool handlers', () => {
     function makeSemanticCtx(overrides: Record<string, unknown> = {}) {
       return {
         vaultPath: '/v',
-        bm25: { search: vi.fn().mockReturnValue([{ path: 'a.md', score: 1, snippet: 'snip', highlights: ['q'] }]) },
+        semanticDb: {
+          searchFTS: vi.fn().mockReturnValue([
+            { path: 'a.md', score: 1, snippet: 'snip' },
+          ]),
+        },
         vector: { search: vi.fn().mockResolvedValue([{ path: 'b.md', score: 0.9, snippet: 'snip2', highlights: ['q'] }]) },
         ...overrides,
       };
     }
 
-    it('semantic_search fuses bm25 and vector results', async () => {
+    it('semantic_search fuses fts5 and vector results', async () => {
       const ctx = makeSemanticCtx();
       const resolve = vi.fn().mockReturnValue(ctx);
       const tools = createSemanticTools(resolve);
       const result = await tools[5].handler({ query: 'test' });
-      expect(ctx.bm25.search).toHaveBeenCalledWith('test', 20);
+      expect(ctx.semanticDb.searchFTS).toHaveBeenCalledWith('test', 20);
       expect(ctx.vector.search).toHaveBeenCalledWith('test', 20);
       expect((result as any).content[0].text).toContain('a.md');
       expect((result as any).content[0].text).toContain('b.md');
     });
 
-    it('semantic_search falls back to bm25 when vector missing', async () => {
+    it('semantic_search falls back to fts5 when vector missing', async () => {
       const ctx = makeSemanticCtx({ vector: undefined });
       const resolve = vi.fn().mockReturnValue(ctx);
       const tools = createSemanticTools(resolve);

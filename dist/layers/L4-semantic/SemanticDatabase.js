@@ -76,11 +76,11 @@ export class SemanticDatabase {
     }
     createFTSTable() {
         this.db.exec(`CREATE VIRTUAL TABLE IF NOT EXISTS search_index USING fts5(
-            path,
-            title,
-            content,
-            tokenize = 'unicode61'
-        );`);
+      path,
+      title,
+      content,
+      tokenize = 'unicode61'
+    );`);
     }
     upsertNode(node) {
         const stmt = this.db.prepare(`
@@ -203,42 +203,48 @@ export class SemanticDatabase {
         const embeddings = this.db.prepare(`SELECT COUNT(*) as c FROM embeddings`).get().c;
         return { nodes, edges, chunks, embeddings };
     }
+    close() {
+        this.db.close();
+    }
     bulkIndex(nodes, edges, chunks) {
         const upsertNodeStmt = this.db.prepare(`
-            INSERT INTO nodes (path, title, content_hash, word_count)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(path) DO UPDATE SET
-                title = excluded.title,
-                content_hash = excluded.content_hash,
-                word_count = excluded.word_count,
-                updated_at = CURRENT_TIMESTAMP
-        `);
+      INSERT INTO nodes (path, title, content_hash, word_count)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(path) DO UPDATE SET
+        title = excluded.title,
+        content_hash = excluded.content_hash,
+        word_count = excluded.word_count,
+        updated_at = CURRENT_TIMESTAMP
+    `);
         const upsertEdgeStmt = this.db.prepare(`
-            INSERT INTO edges (from_path, to_path, type, context)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(from_path, to_path, type) DO UPDATE SET
-                context = excluded.context
-        `);
+      INSERT INTO edges (from_path, to_path, type, context)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(from_path, to_path, type) DO UPDATE SET
+        context = excluded.context
+    `);
         const upsertChunkStmt = this.db.prepare(`
-            INSERT INTO chunks (node_path, chunk_index, heading, content, token_count)
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT(node_path, chunk_index) DO UPDATE SET
-                heading = excluded.heading,
-                content = excluded.content,
-                token_count = excluded.token_count
-        `);
+      INSERT INTO chunks (node_path, chunk_index, heading, content, token_count)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(node_path, chunk_index) DO UPDATE SET
+        heading = excluded.heading,
+        content = excluded.content,
+        token_count = excluded.token_count
+    `);
         const batchSize = 500;
         const chunkIds = [];
         console.error(`[SemanticDatabase] bulkIndex start: nodes=${nodes.length}, edges=${edges.length}, chunks=${chunks.length}`);
         const nodeTx = this.db.transaction((batch) => {
-            for (const node of batch) upsertNodeStmt.run(node.path, node.title, node.contentHash, node.wordCount);
+            for (const node of batch)
+                upsertNodeStmt.run(node.path, node.title, node.contentHash, node.wordCount);
         });
         const edgeTx = this.db.transaction((batch) => {
-            for (const edge of batch) upsertEdgeStmt.run(edge.fromPath, edge.toPath, edge.type, edge.context ?? null);
+            for (const edge of batch)
+                upsertEdgeStmt.run(edge.fromPath, edge.toPath, edge.type, edge.context ?? null);
         });
         const chunkTx = this.db.transaction((batch) => {
             for (const chunk of batch) {
-                chunk.id = upsertChunkStmt.run(chunk.nodePath, chunk.chunkIndex, chunk.heading ?? null, chunk.content, chunk.tokenCount ?? null).lastInsertRowid;
+                const info = upsertChunkStmt.run(chunk.nodePath, chunk.chunkIndex, chunk.heading ?? null, chunk.content, chunk.tokenCount ?? null);
+                chunk.id = Number(info.lastInsertRowid);
                 chunkIds.push(chunk.id);
             }
         });
@@ -263,7 +269,6 @@ export class SemanticDatabase {
         this.db.exec('DELETE FROM chunks');
         this.db.exec('DELETE FROM edges');
         this.db.exec('DELETE FROM nodes');
-        // FTS table is dropped and recreated by bulkUpdateFTS
         console.error('[SemanticDatabase] clearAll done');
     }
     bulkUpdateFTS(ftsContents) {
@@ -282,11 +287,11 @@ export class SemanticDatabase {
     }
     getAllEmbeddings(model) {
         const rows = this.db.prepare(`
-            SELECT e.chunk_id, e.vector, e.dimensions, c.node_path, c.chunk_index
-            FROM embeddings e
-            JOIN chunks c ON c.id = e.chunk_id
-            WHERE e.model = ?
-        `).all(model);
+      SELECT e.chunk_id, e.vector, e.dimensions, c.node_path, c.chunk_index
+      FROM embeddings e
+      JOIN chunks c ON c.id = e.chunk_id
+      WHERE e.model = ?
+    `).all(model);
         return rows.map((r) => {
             const buf = Buffer.from(r.vector);
             const vec = new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4);
@@ -298,9 +303,6 @@ export class SemanticDatabase {
                 dimensions: r.dimensions,
             };
         });
-    }
-    close() {
-        this.db.close();
     }
 }
 function cosineSimilarity(a, b) {

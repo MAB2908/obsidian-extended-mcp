@@ -14,7 +14,7 @@ export class IndexPersistence {
     this.cacheDir = path.join(vaultPath, cacheDir);
   }
 
-  async save(graph: IGraphEngine, bm25: IBM25Engine, vector?: IVectorEngine): Promise<void> {
+  async save(graph: IGraphEngine, bm25: IBM25Engine, _vector?: IVectorEngine): Promise<void> {
     await fs.mkdir(this.cacheDir, { recursive: true });
     const metaTmp = path.join(this.cacheDir, 'index-meta.json.tmp');
     const metaDest = path.join(this.cacheDir, 'index-meta.json');
@@ -30,12 +30,13 @@ export class IndexPersistence {
     await fs.rename(graphTmp, graphDest);
     await fs.writeFile(bm25Tmp, JSON.stringify(bm25.serialize()));
     await fs.rename(bm25Tmp, bm25Dest);
-    if (vector) {
-      const vectorTmp = path.join(this.cacheDir, 'index-vector.json.tmp');
-      const vectorDest = path.join(this.cacheDir, 'index-vector.json');
-      await fs.writeFile(vectorTmp, JSON.stringify(vector.serialize()));
-      await fs.rename(vectorTmp, vectorDest);
-    }
+    // Vector embeddings are persisted in SQLite via SemanticDatabase; skip huge JSON cache
+    // if (vector) {
+    //   const vectorTmp = path.join(this.cacheDir, 'index-vector.json.tmp');
+    //   const vectorDest = path.join(this.cacheDir, 'index-vector.json');
+    //   await fs.writeFile(vectorTmp, JSON.stringify(vector.serialize()));
+    //   await fs.rename(vectorTmp, vectorDest);
+    // }
   }
 
   async load(graph: IGraphEngine, bm25: IBM25Engine, vector?: IVectorEngine): Promise<boolean> {
@@ -49,15 +50,17 @@ export class IndexPersistence {
       if (meta.version !== 1) {
         throw new CorruptedCacheError('Incompatible index version');
       }
+      // Allow large index files (bm25/graph can be hundreds of MB)
+      const maxJsonSize = 2 * 1024 * 1024 * 1024;
       const graphRaw = await fs.readFile(graphDest, 'utf-8');
-      const graphData = safeJsonParse(graphRaw) as {
+      const graphData = safeJsonParse(graphRaw, maxJsonSize) as {
         nodes: Record<string, import('../../shared/types.js').GraphNode>;
         outEdges: Record<string, string[]>;
         inEdges: Record<string, string[]>;
       };
       const bm25Raw = await fs.readFile(bm25Dest, 'utf-8');
-      const bm25Data = safeJsonParse(bm25Raw) as {
-        docs: Record<string, { id: string; tokens: string[]; termFreq: [string, number][]; docLen: number }>;
+      const bm25Data = safeJsonParse(bm25Raw, maxJsonSize) as {
+        docs: Record<string, { id: string; termFreq: [string, number][]; docLen: number }>;
         inverted: Record<string, string[]>;
         avgDocLen: number;
         totalDocLen: number;
@@ -69,7 +72,7 @@ export class IndexPersistence {
       if (vector) {
         try {
           const vectorRaw = await fs.readFile(vectorDest, 'utf-8');
-          const vectorData = safeJsonParse(vectorRaw) as Record<string, number[]>;
+          const vectorData = safeJsonParse(vectorRaw, maxJsonSize) as Record<string, number[]>;
           vector.load(vectorData);
         } catch {
           // vector cache optional
@@ -77,6 +80,7 @@ export class IndexPersistence {
       }
       return true;
     } catch (e) {
+      console.error('[IndexPersistence] Failed to load index cache:', e instanceof Error ? e.message : String(e));
       if (e instanceof CorruptedCacheError) throw e;
       return false;
     }
